@@ -1016,16 +1016,16 @@ _STACK_BINDISTS = \
     {
         "2.15.7": {
             "linux-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-linux-x86_64.tar.gz",
-                "4e635d6168f7578a5694a0d473c980c3c7ed35d971acae969de1fd48ef14e030",
+                "https://github.com/avdv/stack/actions/runs/17038843781/artifacts/3787786060",
+                "da2e0ee35c9bed9ac42dc0c6a842c669e941edb31f31023a371c81fda5d1d327",
             ),
             "linux-aarch64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-linux-aarch64.tar.gz",
                 "f0c4b038c7e895902e133a2f4c4c217e03c4be44aa5da48aec9f7947f4af090b",
             ),
             "osx-x86_64": (
-                "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-osx-x86_64.tar.gz",
-                "ef97f65759a922bc7f5399d9311afdc4a43cc454b70ea7426f991c067899cef1",
+                "https://github.com/avdv/stack/actions/runs/17038843781/artifacts/3787894306",
+                "232f8a31e0b93bf36b3d32a6c32a03407cb75e271dbf220451623393e943ff5e",
             ),
             "osx-aarch64": (
                 "https://github.com/commercialhaskell/stack/releases/download/v2.15.7/stack-2.15.7-osx-aarch64.tar.gz",
@@ -2393,11 +2393,15 @@ def _fetch_stack_impl(repository_ctx):
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
     (url, sha256) = _STACK_BINDISTS[version]["{}-{}".format(os, arch)]
+    cmd = "stack"
     if "unofficial" in url:
         # the unofficial stack bindists from GHCup do not use a prefix directory
         prefix = ""
-    else:
+    elif ".tar." in url:
         prefix = paths.basename(url)[:-len(".tar.gz")]
+    else:
+        prefix = ""
+        cmd = "stack-Linux" if os.startswith("linux") else "stack-macOS"
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
     stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
     if "unofficial" in url:
