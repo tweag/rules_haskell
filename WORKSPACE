@@ -9,6 +9,12 @@ load("//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("@rules_shell//shell:repositories.bzl", "rules_shell_dependencies", "rules_shell_toolchains")
+
+rules_shell_dependencies()
+
+rules_shell_toolchains()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -85,6 +91,7 @@ load(
     "nixpkgs_package",
 )
 
+# buildifier: disable=no-effect
 asterius_dependencies_nix(
     nix_repository = "@nixpkgs_default",
     nixpkgs_package_rule = nixpkgs_package,

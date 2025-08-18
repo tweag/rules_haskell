@@ -462,6 +462,7 @@ def _check_static_attributes_compatibility(is_static, static_runtime, fully_stat
         if static_runtime != None or fully_static_link != None:
             fail("is_static is deprecated. Please use the static_runtime attribute instead.")
 
+        # buildifier: disable=print
         print("WARNING: is_static is deprecated. Please use the static_runtime attribute instead.")
         static_runtime = is_static
 

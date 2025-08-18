@@ -5,8 +5,20 @@ buildifier_exclude_patterns = [
 ]
 
 _lint_warnings = [
-    "load",
-    "unused-variable",
+    "-function-docstring",  # TODO
+    "-function-docstring-args",  # TODO
+    "-function-docstring-header",  # TODO
+    "-function-docstring-return",  # TODO
+    "-native-cc-common",
+    "-native-cc-info",
+    "-native-cc-library",
+    "-native-cc-shared-library-info",
+    "-native-java-common",
+    "-native-java-info",
+    "-native-proto",
+    "-native-proto-common",
+    "-native-proto-info",
+    "-module-docstring",
 ]
 
 # Run this to fix the errors in BUILD files.

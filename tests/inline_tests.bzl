@@ -4,6 +4,7 @@
 
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 def quote_make_variables(s):
     """Quote all genrule “Make” Variables in a string."""
@@ -56,8 +57,7 @@ def sh_inline_test(name, script, **kwargs):
     target_from_string(script_name, script)
 
     deps = kwargs.pop("deps", [])
-
-    native.sh_test(
+    sh_test(
         name = name,
         srcs = [script_name],
         deps = ["@bazel_tools//tools/bash/runfiles"] + deps,

@@ -22,8 +22,8 @@ haskell_repl(
 
 haskell_repl(
     name = "d_unit_repl",
-    deps = ["//tests/multi_repl/bc:d"],
     multi = True,
+    deps = ["//tests/multi_repl/bc:d"],
 )
 
 filegroup(
