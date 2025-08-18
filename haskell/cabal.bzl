@@ -1016,7 +1016,7 @@ _STACK_BINDISTS = \
     {
         "2.15.7": {
             "linux-x86_64": (
-                "https://github.com/avdv/stack/actions/runs/17038843781/artifacts/3787786060",
+                "https://github.com/avdv/stack/releases/download/S-5170/stack-Linux.zip",
                 "da2e0ee35c9bed9ac42dc0c6a842c669e941edb31f31023a371c81fda5d1d327",
             ),
             "linux-aarch64": (
@@ -1024,7 +1024,7 @@ _STACK_BINDISTS = \
                 "f0c4b038c7e895902e133a2f4c4c217e03c4be44aa5da48aec9f7947f4af090b",
             ),
             "osx-x86_64": (
-                "https://github.com/avdv/stack/actions/runs/17038843781/artifacts/3787894306",
+                "https://github.com/avdv/stack/releases/download/S-5170/stack-macOS.zip",
                 "232f8a31e0b93bf36b3d32a6c32a03407cb75e271dbf220451623393e943ff5e",
             ),
             "osx-aarch64": (
