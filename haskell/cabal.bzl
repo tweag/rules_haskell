@@ -1334,6 +1334,7 @@ version: 0.0.0.0
     error = _stack_version_check(repository_ctx, stack_cmd)
     if error:
         fail(error)
+    print("stack cmd:", stack_cmd)
     stack = [stack_cmd]
     exec_result = _execute_or_fail_loudly(
         repository_ctx,
@@ -2383,12 +2384,12 @@ def _get_platform(repository_ctx):
 
 def _fetch_stack_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel")
-    stack_cmd = repository_ctx.which("stack")
-    error = _stack_version_check(repository_ctx, stack_cmd)
-    if not error:
-        repository_ctx.symlink(stack_cmd, "stack")
-        return
-    print(error)  # buildifier: disable=print
+    # stack_cmd = repository_ctx.which("stack")
+    # error = _stack_version_check(repository_ctx, stack_cmd)
+    # if not error:
+    #     repository_ctx.symlink(stack_cmd, "stack")
+    #     return
+    # print(error)  # buildifier: disable=print
     print("Downloading Stack {} ...".format(_STACK_DEFAULT_VERSION))  # buildifier: disable=print
     (os, arch) = _get_platform(repository_ctx)
     version = _STACK_DEFAULT_VERSION
@@ -2403,7 +2404,8 @@ def _fetch_stack_impl(repository_ctx):
         prefix = ""
         cmd = "stack-Linux" if os.startswith("linux") else "stack-macOS"
     repository_ctx.download_and_extract(url = url, sha256 = sha256)
-    stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else "stack")
+    stack_cmd = repository_ctx.path(prefix).get_child("stack.exe" if os == "windows" else cmd)
+    print(url, stack_cmd)
     if "unofficial" in url:
         # the stack binary from the unofficial bindists from GHCup lacks the executable bit
         _execute_or_fail_loudly(repository_ctx, ["chmod", "+x", stack_cmd])
