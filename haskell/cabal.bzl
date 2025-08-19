@@ -1555,7 +1555,7 @@ def _download_packages_unpinned(repository_ctx, snapshot, resolved):
     remote_packages = versioned_packages + unversioned_packages
     stack = [repository_ctx.path(repository_ctx.attr.stack)]
     if remote_packages:
-        _execute_or_fail_loudly(repository_ctx, stack + ["--resolver", snapshot, "unpack"] + remote_packages)
+        _execute_or_fail_loudly(repository_ctx, stack + ["-v", "--rsl-in-log", "--resolver", snapshot, "unpack"] + remote_packages)
 
 def _invert(d):
     """Invert a dictionary."""
