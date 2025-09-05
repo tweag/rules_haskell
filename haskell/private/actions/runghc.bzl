@@ -53,7 +53,7 @@ def build_haskell_runghc(
 
     if lib_info != None:
         for idir in sets.to_list(hs_info.import_dirs):
-            args += ["-i{0}".format(idir)]
+            args.append("-i{0}".format(idir))
 
     link_libraries(
         get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries),

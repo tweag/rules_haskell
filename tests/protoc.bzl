@@ -1,4 +1,5 @@
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def _protoc_wrapper_impl(ctx):
     """
@@ -45,7 +46,7 @@ _protoc_wrapper = rule(
 
 def protoc_wrapper(name):
     _protoc_wrapper(name = name + "wrapper.cmd")
-    native.sh_binary(
+    sh_binary(
         name = name + ".cmd",
         srcs = [name + "wrapper.cmd"],
         target_compatible_with = ["@platforms//os:windows"],

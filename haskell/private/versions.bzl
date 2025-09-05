@@ -133,4 +133,5 @@ def check_bazel_version_compatible(actual_version):
     (compatible, msg) = check_bazel_version(min_bazel, max_bazel, actual_version)
 
     if not compatible:
+        # buildifier: disable=print
         print("WARNING:", msg)

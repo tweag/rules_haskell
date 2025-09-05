@@ -45,6 +45,8 @@ def all_dependencies_package_ids(deps):
             package_ids.extend(all_package_ids(dep[HaskellLibraryInfo]))
     return package_ids
 
+# TODO add fields
+# buildifier: disable=provider-params
 HaskellToolchainLibraryInfo = provider(
     doc = "Library that was imported via haskell_toolchain_library.",
 )

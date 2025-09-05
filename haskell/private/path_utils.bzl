@@ -48,13 +48,12 @@ def infer_main_module(main_function):
     module name.
     """
     components = main_function.split(".")
-    for i in range(len(components)):
-        if not is_valid_module_component(components[i]):
+    i = 0
+    for i, component in enumerate(components):
+        if not is_valid_module_component(component):
             break
-    if i == 0:
-        return "Main"
-    else:
-        return ".".join(components[0:i])
+
+    return "Main" if i == 0 else ".".join(components[:i])
 
 def _module_map_insert(module_map, module_name, module_file, is_boot = False):
     entry = module_map.get(module_name, struct(src = None, boot = None))

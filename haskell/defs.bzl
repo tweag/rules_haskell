@@ -25,6 +25,10 @@ load(
     _haskell_toolchain_library_impl = "haskell_toolchain_library_impl",
 )
 load(
+    ":providers.bzl",
+    "HaskellLibraryInfo",
+)
+load(
     ":repl.bzl",
     _haskell_repl = "haskell_repl",
     _haskell_repl_aspect = "haskell_repl_aspect",
@@ -194,7 +198,7 @@ _haskell_library = rule(
     attrs = dict(
         _haskell_common_attrs,
         hidden_modules = attr.string_list(),
-        reexported_modules = attr.label_keyed_string_dict(),
+        reexported_modules = attr.label_keyed_string_dict(providers = [HaskellLibraryInfo]),
         exports = attr.label_list(
             default = [],
             aspects = [haskell_cc_libraries_aspect],

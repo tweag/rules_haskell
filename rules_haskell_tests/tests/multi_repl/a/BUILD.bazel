@@ -7,15 +7,15 @@ package(default_visibility = ["//visibility:public"])
 
 haskell_library(
     name = "a",
+    package_name = "a",
     srcs = [
         "src/A/A.hs",
     ],
     src_strip_prefix = "src",
+    version = "0.0.0",
     deps = [
         "//tests/hackage:base",
     ],
-    package_name = "a",
-    version = "0.0.0",
 )
 
 filegroup(
