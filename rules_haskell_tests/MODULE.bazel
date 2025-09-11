@@ -119,7 +119,6 @@ use_repo(
     "asterius_bundle_linux_amd64",
     "bazel_6",
     "bazel_7",
-    "build_bazel_bazel_6_0_0",
     "build_bazel_bazel_6_3_2",
     "build_bazel_bazel_6_5_0",
     "build_bazel_bazel_7_1_0",
