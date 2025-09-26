@@ -4,6 +4,7 @@
         "github>tweag/renovate-presets:mergify"
     ],
     "ignorePaths": [
+        "examples/primitive/**",
         "registry/**"
     ],
     "packageRules": [
