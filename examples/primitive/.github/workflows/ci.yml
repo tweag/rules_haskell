@@ -26,15 +26,15 @@ jobs:
         # - os: ubuntu-22.04
         #   ghc: 'latest'
     steps:
-    - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
+    - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+    - uses: haskell/actions/setup@ce6c3a6f8cbe3bd6ce51b635b3f32ee792f22f91 # v2
       id: setup-haskell-cabal
       with:
         ghc-version: ${{ matrix.ghc }}
         ghcup-release-channel: ${{ matrix.ghcup-release-channel }}
     - name: Update cabal package database
       run: cabal update
-    - uses: actions/cache@v3
+    - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3
       name: Cache cabal stuff
       with:
         path: |
