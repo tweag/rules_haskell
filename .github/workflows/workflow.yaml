@@ -324,6 +324,11 @@ jobs:
         run: |
           # Quote the package specifier so that it works on Windows
           bazelisk test "//..."
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   all_ci_tests:
     runs-on: ubuntu-24.04
