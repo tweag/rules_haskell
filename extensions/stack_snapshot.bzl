@@ -92,6 +92,7 @@ _package_tag = tag_class(
         "flags": attr.string_list(
             doc = """List of cabal flags to configure this package.
             Only usable by the root module (or rules_haskell itself).
+            For a flag called `flag1`, to enable say `flag1` or `+flag1`, to disable say `-flag1`.
             """,
         ),
         "extra_deps": attr.label_list(
