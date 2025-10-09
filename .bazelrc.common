@@ -77,6 +77,7 @@ build:remote-cache --experimental_remote_build_event_upload=minimal
 common:ci --config=ci-common
 build:ci --config=remote-cache
 build:ci --remote_upload_local_results
+build:ci --build_metadata=VISIBILITY=PUBLIC
 
 common:ci-common --color=no
 
