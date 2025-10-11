@@ -4,7 +4,6 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe", "read_netrc", "use_netrc")
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load(":cc.bzl", "cc_interop_info", "ghc_cc_program_args")
 load(":haddock.bzl", "generate_unified_haddock_info")
@@ -20,6 +19,7 @@ load(
 load(":private/context.bzl", "haskell_context")
 load(":private/dependencies.bzl", "gather_dep_info")
 load(":private/expansions.bzl", "expand_make_variables")
+load(":private/get_cpu_value.bzl", "get_cpu_value")
 load(":private/mode.bzl", "is_profiling_enabled")
 load(
     ":private/path_utils.bzl",

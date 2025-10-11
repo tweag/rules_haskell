@@ -1,4 +1,4 @@
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
+load("//haskell:private/get_cpu_value.bzl", "get_cpu_value")
 
 _os_info_bzl_template = """
 cpu_value = "{CPU_VALUE}"

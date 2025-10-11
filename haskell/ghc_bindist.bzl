@@ -2,11 +2,11 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "patch")
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE")
 load("@rules_sh//sh:posix.bzl", "sh_posix_configure")
 load("//haskell:ghc.bzl", "DEFAULT_GHC_VERSION")
 load(":private/bazel_platforms.bzl", "bazel_platforms")
+load(":private/get_cpu_value.bzl", "get_cpu_value")
 load(
     ":private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
@@ -628,10 +628,7 @@ def _configure_python3_toolchain_impl(repository_ctx):
     else:
         stub_shebang = ""
     repository_ctx.file("BUILD.bazel", executable = False, content = """
-load(
-    "@bazel_tools//tools/python:toolchain.bzl",
-    "py_runtime_pair",
-)
+load("@rules_python//python:py_runtime_pair.bzl", "py_runtime_pair")
 py_runtime(
     name = "python3_runtime",
     interpreter_path = "{python3}",
