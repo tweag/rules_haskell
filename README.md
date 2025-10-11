@@ -27,6 +27,10 @@ You'll need [Bazel >= 6.0][bazel-getting-started] installed.
 
 If you are on NixOS, skip to the [Nixpkgs](#Nixpkgs) section.
 
+> [!NOTE]
+> Bazel 8 users will need to add
+> `common --noincompatible_disallow_ctx_resolve_tools` to `.bazelrc`
+
 ### System dependencies
 
 Refer to the "Before you begin" section in [the documentation](docs/haskell.rst).
