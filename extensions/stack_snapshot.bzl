@@ -129,6 +129,17 @@ _package_tag = tag_class(
             default = False,
             doc = "Configuring a package makes it visible by default, unless `hidden` is set to True",
         ),
+        "components_args": attr.string_dict(
+            doc = """ components_args: Defines map from component to cabal settings for that package.
+            The cabal settings are a target of type `haskell_cabal_args`. Currently handles empty
+            libraries and telling the build system to ignore `Setup.hs`.
+            Use `lib` for the main library component, `exe:<exe-name>` for an executable component,
+            and `lib:<sublib-name>` for a sublibrary.
+            `exe` is a short-cut for `exe:<package-name>`.
+            Either use the builtin "@rules_haskell//tools/cabal_args:empty_library", or create your own
+            if necessary.
+            """,
+        ),
     },
 )
 
@@ -180,6 +191,8 @@ def _add_packages(conf, module, root_or_rules_haskell):
         if package_tag.components != ["DETECT_DEFAULT"]:
             # Some packages have default components set
             conf.components[package_name] = package_tag.components
+        if package_tag.components_args:
+            conf.components[package_name] = package_tag.components_args
         if package_tag.components_dependencies:
             conf.components_dependencies[package_name] = json.encode(package_tag.components_dependencies)
         if package_tag.extra_deps:
@@ -295,6 +308,7 @@ def _stack_snapshot_impl(mctx):
         extra_deps = {},
         components = {},
         components_dependencies = {},
+        components_args = {},
         vendored_packages = {},
     )
 
@@ -318,6 +332,7 @@ def _stack_snapshot_impl(mctx):
     kwargs["flags"] = packages_conf.flags
     kwargs["components"] = packages_conf.components
     kwargs["components_dependencies"] = packages_conf.components_dependencies
+    kwargs["components_args"] = packages_conf.components_args
     kwargs["extra_deps"] = packages_conf.extra_deps
     kwargs["vendored_packages"] = packages_conf.vendored_packages
     kwargs["name"] = "stackage"
