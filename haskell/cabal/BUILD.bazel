@@ -1,0 +1,13 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_args")
+
+haskell_cabal_args(
+    name = "empty_library",
+    is_empty = True,
+    visibility = ["//visibility:public"],
+)
+
+haskell_cabal_args(
+    name = "ignore_setup",
+    ignore_setup = True,
+    visibility = ["//visibility:public"],
+)
