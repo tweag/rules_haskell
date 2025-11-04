@@ -13,9 +13,9 @@ rules_haskell_dependencies()
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc948",
     repository = "@rules_haskell//nixpkgs:default.nix",
-    version = "8.10.7",
+    version = "9.4.8",
 )
 
 load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
@@ -24,7 +24,7 @@ rules_haskell_toolchains(
     dist = {
         "linux_amd64": "deb10",
     },
-    version = "8.10.7",
+    version = "9.4.8",
 )
 
 load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_cc_configure")
