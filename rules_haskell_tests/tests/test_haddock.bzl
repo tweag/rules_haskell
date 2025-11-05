@@ -95,15 +95,15 @@ def expected_values(test_ghc_version):
         ]
     elif test_ghc_version == "9.8.2" and is_darwin:
         return [
-            "haddock/array-0.5.6.0-28ee",
-            "haddock/base-4.19.1.0-654f",
-            "haddock/deepseq-1.5.0.0-778c",
-            "haddock/ghc-bignum-1.3-8434",
-            "haddock/ghc-boot-th-9.8.2-bc62",
-            "haddock/ghc-prim-0.11.0-a7d8",
+            "haddock/array-0.5.6.0-a13d",
+            "haddock/base-4.19.1.0-e86d",
+            "haddock/deepseq-1.5.0.0-8f97",
+            "haddock/ghc-bignum-1.3-625d",
+            "haddock/ghc-boot-th-9.8.2-c69e",
+            "haddock/ghc-prim-0.11.0-f42f",
             "haddock/index",
-            "haddock/pretty-1.1.3.6-ffc0",
-            "haddock/template-haskell-2.21.0.0-fc14",
+            "haddock/pretty-1.1.3.6-b285",
+            "haddock/template-haskell-2.21.0.0-4c6f",
             "haddock/testsZShaddockZShaddock-lib-a",
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",

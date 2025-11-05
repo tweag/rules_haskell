@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13]
+        os: [ubuntu-24.04, macos-14]
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, windows-2022]
+        os: [ubuntu-24.04, macos-14, windows-2022]
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
@@ -254,7 +254,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-24.04, macos-14, macos-15-intel, windows-2022]
         bzlmod: [true, false]
         bazel:
           - "6.x"
