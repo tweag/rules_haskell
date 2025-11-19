@@ -50,6 +50,7 @@ jobs:
           - 9.4.8
           - 9.6.5
           - 9.8.2
+          - 9.10.3
         exclude:
           - module: rules_haskell_nix
 
@@ -59,6 +60,8 @@ jobs:
           - ghc: 9.8.2
             bzlmod: true
           - ghc: 9.6.5
+            bzlmod: true
+          - ghc: 9.10.3
             bzlmod: true
     runs-on: ${{ matrix.os }}
     env:
@@ -146,6 +149,7 @@ jobs:
           - 9.4.8
           - 9.6.5
           - 9.8.2
+          - 9.10.3
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
@@ -153,10 +157,14 @@ jobs:
             bzlmod: true
           - ghc: 9.6.5
             bzlmod: true
+          - ghc: 9.10.3
+            bzlmod: true
           # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
           - ghc: 9.6.5
             os: windows-2022
           - ghc: 9.8.2
+            os: windows-2022
+          - ghc: 9.10.3
             os: windows-2022
     env:
       GHC_VERSION: ${{ matrix.ghc }}
