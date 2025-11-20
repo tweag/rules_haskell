@@ -63,6 +63,11 @@ jobs:
             bzlmod: true
           - ghc: 9.10.3
             bzlmod: true
+          # GHC 9.10.3 not available in current nixpkgs pin (2024-07-02)
+          - ghc: 9.10.3
+            os: ubuntu-24.04
+          - ghc: 9.10.3
+            os: macos-14
     runs-on: ${{ matrix.os }}
     env:
       NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
