@@ -108,5 +108,20 @@ def expected_values(test_ghc_version):
             "haddock/testsZShaddockZShaddock-lib-b",
             "haddock/testsZShaddockZShaddock-lib-deep",
         ]
+    elif test_ghc_version == "9.10.3":
+        return [
+            "haddock/array-0.5.8.0",
+            "haddock/base-4.20.2.0",
+            "haddock/deepseq-1.5.0.0",
+            "haddock/ghc-bignum-1.3",
+            "haddock/ghc-prim-0.12.0",
+            "haddock/index",
+            "haddock/pretty-1.1.3.6",
+            "haddock/template-haskell-2.22.0.0",
+            "haddock/testsZShaddockZShaddock-lib-a",
+            "haddock/testsZShaddockZShaddock-lib-b",
+            "haddock/testsZShaddockZShaddock-lib-deep",
+            "haddock/ghc-boot-th-9.10.3",
+        ]
     else:
         fail("//tests:test-haddock is missing case : (test_ghc_version={}, cpu_value={})".format(test_ghc_version, cpu_value))
