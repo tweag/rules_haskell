@@ -1,4 +1,4 @@
-resolver: nightly-2024-12-11
+resolver: lts-24.19
 
 packages:
  - ghcide-2.9.0.0
