@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:versions.bzl", "versions")
 load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
 load("@os_info//:os_info.bzl", "is_windows")
 load(
@@ -27,7 +28,7 @@ load("@rules_haskell//tests:inline_tests.bzl", "sh_inline_test")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//tests:rule_test_exe.bzl", "rule_test_exe")
-load("//tests:test_haddock.bzl", "expected_values")
+load("//tests:test_haddock.bzl", "non_versioned_output_test")
 
 # prefer the GHC version set by rules_haskell, use the default test GHC version otherwise
 TEST_GHC_VERSION = GHC_VERSION or DEFAULT_TEST_GHC_VERSION
@@ -205,11 +206,26 @@ rule_test_exe(
     rule = "//tests/hsc",
 )
 
-rule_test(
+non_versioned_output_test(
     name = "test-haddock",
     size = "small",
-    generates = expected_values(TEST_GHC_VERSION),
-    rule = "//tests/haddock",
+    generates = [
+        "haddock/array",
+        "haddock/base",
+        "haddock/deepseq",
+        "haddock/ghc-bignum",
+        "haddock/ghc-prim",
+        "haddock/index",
+        "haddock/pretty",
+        "haddock/template-haskell",
+        "haddock/testsZShaddockZShaddock-lib-a",
+        "haddock/testsZShaddockZShaddock-lib-b",
+        "haddock/testsZShaddockZShaddock-lib-deep",
+        "haddock/ghc-boot-th",
+    ] + (
+        ["haddock/ghc-internal"] if versions.is_at_least("9.10.1", TEST_GHC_VERSION) else []
+    ),
+    target_under_test = "//tests/haddock",
 )
 
 rule_test(

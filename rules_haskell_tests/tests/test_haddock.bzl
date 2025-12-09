@@ -1,127 +1,66 @@
 """ Compute expected results for the //tests:test-haddock test"""
 
-load("@os_info//:os_info.bzl", "cpu_value", "is_darwin", "is_linux", "is_nix_shell", "is_windows")
+load("@bazel_skylib//lib:new_sets.bzl", "sets")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_tools//tools/build_rules:test_rules.bzl", "strip_prefix")
 
-def expected_values(test_ghc_version):
-    if test_ghc_version == "9.2.8":
-        return [
-            "haddock/array-0.5.4.0",
-            "haddock/base-4.16.4.0",
-            "haddock/deepseq-1.4.6.1",
-            "haddock/ghc-bignum-1.2",
-            "haddock/ghc-prim-0.8.0",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.18.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.2.8",
-        ]
-    elif test_ghc_version == "9.4.8":
-        return [
-            "haddock/array-0.5.4.0",
-            "haddock/base-4.17.2.1",
-            "haddock/deepseq-1.4.8.0",
-            "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.9.1",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.19.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.4.8",
-        ]
-    elif test_ghc_version == "9.6.5":
-        return [
-            "haddock/array-0.5.6.0",
-            "haddock/base-4.18.2.1",
-            "haddock/deepseq-1.4.8.1",
-            "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.10.0",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.20.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.6.5",
-        ]
-    elif test_ghc_version == "9.8.2" and is_nix_shell:
-        return [
-            "haddock/array-0.5.6.0-inplace",
-            "haddock/base-4.19.1.0-inplace",
-            "haddock/deepseq-1.5.0.0-inplace",
-            "haddock/ghc-bignum-1.3-inplace",
-            "haddock/ghc-prim-0.11.0-inplace",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6-inplace",
-            "haddock/template-haskell-2.21.0.0-inplace",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.8.2-inplace",
-        ]
-    elif test_ghc_version == "9.8.2" and is_windows:
-        return [
-            "haddock/array-0.5.6.0-eeeb",
-            "haddock/base-4.19.0.0-1e7d",
-            "haddock/deepseq-1.5.0.0-940f",
-            "haddock/ghc-bignum-1.3-7ca5",
-            "haddock/ghc-boot-th-9.8.2-d8a4",
-            "haddock/ghc-prim-0.11.0-6ef2",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6-39a4",
-            "haddock/template-haskell-2.21.0.0-9348",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ]
-    elif test_ghc_version == "9.8.2" and is_linux:
-        return [
-            "haddock/array-0.5.6.0-7881",
-            "haddock/base-4.19.1.0-179c",
-            "haddock/deepseq-1.5.0.0-6708",
-            "haddock/ghc-bignum-1.3-b9ac",
-            "haddock/ghc-boot-th-9.8.2-9178",
-            "haddock/ghc-prim-0.11.0-7523",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6-8bb3",
-            "haddock/template-haskell-2.21.0.0-9c7a",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ]
-    elif test_ghc_version == "9.8.2" and is_darwin:
-        return [
-            "haddock/array-0.5.6.0-a13d",
-            "haddock/base-4.19.1.0-e86d",
-            "haddock/deepseq-1.5.0.0-8f97",
-            "haddock/ghc-bignum-1.3-625d",
-            "haddock/ghc-boot-th-9.8.2-c69e",
-            "haddock/ghc-prim-0.11.0-f42f",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6-b285",
-            "haddock/template-haskell-2.21.0.0-4c6f",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-        ]
-    elif test_ghc_version == "9.10.3":
-        return [
-            "haddock/array-0.5.8.0",
-            "haddock/base-4.20.2.0",
-            "haddock/deepseq-1.5.0.0",
-            "haddock/ghc-bignum-1.3",
-            "haddock/ghc-prim-0.12.0",
-            "haddock/index",
-            "haddock/pretty-1.1.3.6",
-            "haddock/template-haskell-2.22.0.0",
-            "haddock/testsZShaddockZShaddock-lib-a",
-            "haddock/testsZShaddockZShaddock-lib-b",
-            "haddock/testsZShaddockZShaddock-lib-deep",
-            "haddock/ghc-boot-th-9.10.3",
-        ]
+def _is_version(token):
+    if "." not in token:
+        return False
+    parts = token.split(".")
+    for p in parts:
+        if not p.isdigit():
+            return False
+    return True
+
+def _strip_version_suffix(s):
+    parts = s.split("-")
+    if len(parts) < 2:
+        return s
+    if _is_version(parts[-1]):
+        return "-".join(parts[:-1])
+    if len(parts) < 3:
+        return s
+    if parts[-1].isalnum() and _is_version(parts[-2]):
+        return "-".join(parts[:-2])
+    return s
+
+def _non_versioned_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    target = analysistest.target_under_test(env)
+
+    # Generate the proper prefix to remove from generated files.
+    prefix_parts = []
+
+    if target.label.workspace_root:
+        # Create a prefix that is correctly relative to the output of this rule.
+        prefix_parts = ["..", strip_prefix("external/", target.label.workspace_root)]
+
+    if target.label.package:
+        prefix_parts.append(target.label.package)
+
+    if prefix_parts:
+        prefix = "/".join(prefix_parts) + "/"
     else:
-        fail("//tests:test-haddock is missing case : (test_ghc_version={}, cpu_value={})".format(test_ghc_version, cpu_value))
+        prefix = ""
+
+    generated = [
+        _strip_version_suffix(strip_prefix(prefix, f.short_path))
+        for f in target.files.to_list()
+    ]
+    asserts.new_set_equals(
+        env,
+        sets.make(ctx.attr.generates),
+        sets.make(generated),
+        "Generates expected files (sans version suffix)",
+    )
+
+    return analysistest.end(env)
+
+non_versioned_output_test = analysistest.make(
+    _non_versioned_test_impl,
+    attrs = {
+        "generates": attr.string_list(),
+    },
+)
