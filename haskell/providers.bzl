@@ -39,6 +39,7 @@ HaskellCabalArgsInfo = provider(
     fields = {
         "is_empty": "True if this (sub) library is empty, with only re-exports, and no source files of its own.",
         "ignore_setup": "True if this package contains a \"Setup.hs\" that isn't a cabal Setup module.",
+        "static_binary": "True if this package should build a (haskell) static binary. Default is True.",
     },
 )
 

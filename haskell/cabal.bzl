@@ -196,7 +196,8 @@ def _prepare_cabal_inputs(
         transitive_haddocks,
         generate_paths_module,
         is_library = False,  # @unused
-        dynamic_file = None):
+        dynamic_file = None,
+        static_binary = True):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -400,13 +401,15 @@ def _prepare_cabal_inputs(
     )
     input_manifests = tool_input_manifests + hs.toolchain.cc_wrapper.manifests
 
+    runfiles_direct = runfiles_libs if static_binary else dynamic_libs
+
     return struct(
         cabal_wrapper = cabal_wrapper,
         args = args,
         inputs = inputs,
         input_manifests = input_manifests,
         env = env,
-        runfiles = depset(direct = runfiles_libs),
+        runfiles = depset(direct = runfiles_direct),
     )
 
 def _gather_transitive_haddocks(deps):
@@ -427,9 +430,11 @@ def _shorten_library_symlink(dynamic_library):
 def _haskell_cabal_args_impl(ctx):
     is_empty = ctx.attr.is_empty
     ignore_setup = ctx.attr.ignore_setup
+    static_binary = ctx.attr.static_binary
     cabal_args = HaskellCabalArgsInfo(
         is_empty = is_empty,
         ignore_setup = ignore_setup,
+        static_binary = static_binary,
     )
     return [cabal_args]
 
@@ -444,6 +449,12 @@ haskell_cabal_args = rule(
         "ignore_setup": attr.bool(
             default = False,
             doc = """True if this package has a "Setup.hs" that is not a cabal "Setup.hs". """,
+        ),
+        "static_binary": attr.bool(
+            default = True,
+            doc = """Whether to build a static binary (statically linked against haskell libraries).
+            defaults to True. Some programs (like haskell-language-server) require dynamic linking
+            for certain functionality.""",
         ),
     },
     provides = [HaskellCabalArgsInfo],
@@ -836,6 +847,9 @@ def _haskell_cabal_binary_impl(ctx):
     ignore_setup = False
     if ctx.attr.cabal_args:
         ignore_setup = ctx.attr.cabal_args[HaskellCabalArgsInfo].ignore_setup
+    static_binary = True
+    if ctx.attr.cabal_args:
+        static_binary = ctx.attr.cabal_args[HaskellCabalArgsInfo].static_binary
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -854,6 +868,12 @@ def _haskell_cabal_binary_impl(ctx):
 
     exe_name = ctx.attr.exe_name if ctx.attr.exe_name else hs.label.name
     user_cabalopts = _expand_make_variables("cabalopts", ctx, ctx.attr.cabalopts)
+    STATIC_CABAL_OPT = "--ghc-option=-static"
+    if static_binary:
+        if STATIC_CABAL_OPT not in user_cabalopts:
+            user_cabalopts = user_cabalopts + [STATIC_CABAL_OPT]
+    elif STATIC_CABAL_OPT in user_cabalopts:
+        user_cabalopts = [o for o in user_cabalopts if o != STATIC_CABAL_OPT]
     if ctx.attr.compiler_flags:
         fail("ERROR: `compiler_flags` attribute was removed. Use `cabalopts` with `--ghc-option` instead.")
 
@@ -902,6 +922,7 @@ def _haskell_cabal_binary_impl(ctx):
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if hs.tools_config.supports_haddock else depset([]),
+        static_binary = static_binary,
     )
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))

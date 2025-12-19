@@ -11,3 +11,9 @@ haskell_cabal_args(
     ignore_setup = True,
     visibility = ["//visibility:public"],
 )
+
+haskell_cabal_args(
+    name = "dynamic_binary",
+    static_binary = False,
+    visibility = ["//visibility:public"],
+)
