@@ -2193,7 +2193,7 @@ haskell_cabal_library(
                 exe_args = _get_components_args(user_components_args, "{}:exe:{}".format(name, exe))
                 cabal_args = ""
                 if exe_args != None:
-                    cabal_args = "cabal_args = \"{}\",".format(lib_args)
+                    cabal_args = "cabal_args = \"{}\",".format(exe_args)
                 build_file_builder.append(
                     """
 haskell_cabal_binary(
