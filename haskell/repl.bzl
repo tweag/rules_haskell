@@ -851,7 +851,7 @@ def _hie_bios_impl_multi(ctx):
             hs,
             cc,
             repl_info,
-            static = True,
+            static = False,
             include_package_ids = False,
             get_dirname = local_dir,
         )
