@@ -33,3 +33,11 @@ nixpkgs_cc_configure(
     name = "nixpkgs_config_cc",
     repository = "@rules_haskell//nixpkgs:default.nix",
 )
+
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
+
+load("@rules_cc//cc:extensions.bzl", "compatibility_proxy_repo")
+
+compatibility_proxy_repo()
