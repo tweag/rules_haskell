@@ -1207,6 +1207,7 @@ _default_components_args = {
     "haskell-gi-overloading:lib:haskell-gi-overloading": "@rules_haskell//haskell/cabal:empty_library",
     "mtl-compat:lib:mtl-compat": "@rules_haskell//haskell/cabal:empty_library",
     "nats:lib:nats": "@rules_haskell//haskell/cabal:empty_library",
+    "zlib-clib:lib:zlib-clib": "@rules_haskell//haskell/cabal:without_haddock",
 }
 
 def _get_components(components, package):

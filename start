@@ -219,8 +219,6 @@ case "${MODE}" in
         ;;
 esac > "${ZLIB_BUILD_FILE}"
 
-WITH_HADDOCK=True
-
 case "$GHC_VERSION" in
     8.10.*)
         SNAPSHOT=lts-18.28
@@ -244,12 +242,6 @@ case "$GHC_VERSION" in
         SNAPSHOT=lts-24.28
         ;;
     *)
-        # zlib >= 0.7.1.0 depends on zlib-clib on Windows (unless using pkg-config), since zlib-clib is
-        # a C only cabal library that does not produce any haddock this results in an error.
-        # See https://github.com/tweag/rules_haskell/issues/2200
-        case "$( uname )" in
-            WindowsNT | MINGW* | MSYS* ) WITH_HADDOCK=False ;;
-        esac
         SNAPSHOT=nightly-2026-01-16
         stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
 esac
@@ -305,7 +297,6 @@ stack_snapshot(
 
     # disable calling pkg-config
     flags = {"zlib": ["-pkg-config"]},
-    haddock = $WITH_HADDOCK,
 
     # LTS snapshot published for ghc-${GHC_VERSION} (default version used by rules_haskell)
     snapshot = "$SNAPSHOT",
