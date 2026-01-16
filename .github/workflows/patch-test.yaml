@@ -68,7 +68,7 @@ jobs:
           packages: libnuma-dev
       - name: Build & test
         shell: bash
-        run: |
-          export GHC_VERSION=${{ matrix.ghc-version }}
-          cd rules_haskell_tests
-          ./tests/run-start-script.sh --use-bindists
+        env:
+          GHC_VERSION: ${{ matrix.ghc-version }} 
+        working-directory: rules_haskell_tests
+        run: ./tests/run-start-script.sh --use-bindists
