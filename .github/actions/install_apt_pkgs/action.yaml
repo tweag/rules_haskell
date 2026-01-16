@@ -3,8 +3,8 @@ description: Install packages via apt-get install.
 
 inputs:
   packages:
-    type: string
     description: A space-separated list of apt packages to install.
+    required: true
 
 runs:
   using: composite
