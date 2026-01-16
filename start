@@ -235,7 +235,13 @@ case "$GHC_VERSION" in
         SNAPSHOT=lts-21.5
         ;;
     9.6.*)
-        SNAPSHOT=lts-22.22
+        SNAPSHOT=lts-22.44
+        ;;
+    9.8.*)
+        SNAPSHOT=lts-23.28
+        ;;
+    9.10.*)
+        SNAPSHOT=lts-24.28
         ;;
     *)
         # zlib >= 0.7.1.0 depends on zlib-clib on Windows (unless using pkg-config), since zlib-clib is
@@ -244,7 +250,7 @@ case "$GHC_VERSION" in
         case "$( uname )" in
             WindowsNT | MINGW* | MSYS* ) WITH_HADDOCK=False ;;
         esac
-        SNAPSHOT=nightly-2024-05-24
+        SNAPSHOT=nightly-2026-01-16
         stderr "warning: unsupported GHC version: ${GHC_VERSION}, using stack resolver ${SNAPSHOT}"
 esac
 
