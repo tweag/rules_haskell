@@ -1205,6 +1205,7 @@ _default_components_args = {
     "fail:lib:fail": "@rules_haskell//haskell/cabal:empty_library",
     "ghc-byteorder:lib:ghc-byteorder": "@rules_haskell//haskell/cabal:empty_library",
     "haskell-gi-overloading:lib:haskell-gi-overloading": "@rules_haskell//haskell/cabal:empty_library",
+    "libyaml-clib:lib:libyaml-clib": "@rules_haskell//haskell/cabal:without_haddock",
     "mtl-compat:lib:mtl-compat": "@rules_haskell//haskell/cabal:empty_library",
     "nats:lib:nats": "@rules_haskell//haskell/cabal:empty_library",
     "zlib-clib:lib:zlib-clib": "@rules_haskell//haskell/cabal:without_haddock",
