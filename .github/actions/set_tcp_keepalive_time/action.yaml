@@ -6,7 +6,6 @@ description: Avoids deadline exceeded errors on Linux.
 
 inputs:
   tcp_keepalive_time:
-    type: number
     description: The value to be set for the TCP keep-alive time.
     default: 60
 

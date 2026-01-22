@@ -431,10 +431,12 @@ def _haskell_cabal_args_impl(ctx):
     is_empty = ctx.attr.is_empty
     ignore_setup = ctx.attr.ignore_setup
     static_binary = ctx.attr.static_binary
+    with_haddock = ctx.attr.with_haddock
     cabal_args = HaskellCabalArgsInfo(
         is_empty = is_empty,
         ignore_setup = ignore_setup,
         static_binary = static_binary,
+        with_haddock = with_haddock,
     )
     return [cabal_args]
 
@@ -456,6 +458,11 @@ haskell_cabal_args = rule(
             defaults to True. Some programs (like haskell-language-server) require dynamic linking
             for certain functionality.""",
         ),
+        "with_haddock": attr.bool(
+            default = True,
+            doc = """Whether to build haddock docs for Haskell modules. Some components do not contain
+            Haskell code and no haddock output will be generated.""",
+        ),
     },
     provides = [HaskellCabalArgsInfo],
 )
@@ -472,9 +479,13 @@ def _haskell_cabal_library_impl(ctx):
 
     is_empty = False
     ignore_setup = False
+    with_haddock = hs.tools_config.supports_haddock
     if ctx.attr.cabal_args:
-        is_empty = ctx.attr.cabal_args[HaskellCabalArgsInfo].is_empty
-        ignore_setup = ctx.attr.cabal_args[HaskellCabalArgsInfo].ignore_setup
+        cabal_args = ctx.attr.cabal_args[HaskellCabalArgsInfo]
+
+        is_empty = cabal_args.is_empty
+        ignore_setup = cabal_args.ignore_setup
+        with_haddock = with_haddock and not is_empty and cabal_args.with_haddock
 
     # All C and Haskell library dependencies.
     cc_info = cc_common.merge_cc_infos(
@@ -516,7 +527,6 @@ def _haskell_cabal_library_impl(ctx):
         "_install/{}_data".format(package_id),
         sibling = cabal,
     )
-    with_haddock = ctx.attr.haddock and hs.tools_config.supports_haddock and not is_empty
     if with_haddock:
         haddock_file = hs.actions.declare_file(
             "_install/{}_haddock/{}.haddock".format(package_id, package_name),
@@ -1195,8 +1205,10 @@ _default_components_args = {
     "fail:lib:fail": "@rules_haskell//haskell/cabal:empty_library",
     "ghc-byteorder:lib:ghc-byteorder": "@rules_haskell//haskell/cabal:empty_library",
     "haskell-gi-overloading:lib:haskell-gi-overloading": "@rules_haskell//haskell/cabal:empty_library",
+    "libyaml-clib:lib:libyaml-clib": "@rules_haskell//haskell/cabal:without_haddock",
     "mtl-compat:lib:mtl-compat": "@rules_haskell//haskell/cabal:empty_library",
     "nats:lib:nats": "@rules_haskell//haskell/cabal:empty_library",
+    "zlib-clib:lib:zlib-clib": "@rules_haskell//haskell/cabal:without_haddock",
 }
 
 def _get_components(components, package):

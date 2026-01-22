@@ -17,3 +17,9 @@ haskell_cabal_args(
     static_binary = False,
     visibility = ["//visibility:public"],
 )
+
+haskell_cabal_args(
+    name = "without_haddock",
+    visibility = ["//visibility:public"],
+    with_haddock = False,
+)
