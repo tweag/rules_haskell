@@ -85,6 +85,26 @@ def _impl(ctx):
             ),
         ],
     )
+    no_canonical_paths_feature = feature(
+        name = "no_canonical_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = [
+                            "-no-canonical-prefixes",
+                            "-fno-canonical-system-headers",
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
         toolchain_identifier = "ghc_windows_mingw64",
@@ -97,7 +117,7 @@ def _impl(ctx):
         abi_libc_version = "local",
         tool_paths = tool_paths,
         artifact_name_patterns = artifact_name_patterns,
-        features = [default_link_flags_feature],
+        features = [default_link_flags_feature, no_canonical_paths_feature],
     )
 
 cc_toolchain_config = rule(
