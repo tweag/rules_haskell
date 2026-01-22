@@ -3422,6 +3422,143 @@
             }
         ]
     },
+    "9.12.3": {
+        "darwin_amd64": [
+            {
+                "dist": "apple",
+                "sha256": "f7d8f47218b21f837475ca8daf4547a18558e0f1cbc29a8c9c9295e5130c1e43",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-apple-darwin.tar.xz"
+            }
+        ],
+        "darwin_arm64": [
+            {
+                "dist": "apple",
+                "sha256": "f9625bfec2c20531d235aae6fafc0af38d4ce21d624712a19b04d3ea0c12484f",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-aarch64-apple-darwin.tar.xz"
+            }
+        ],
+        "linux_amd64": [
+            {
+                "dist": "alpine3_12",
+                "sha256": "61d0232d204b737c943e2749d188ac01ef4abd54117d70731b7a8df0e338b468",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-alpine3_12-linux.tar.xz"
+            },
+            {
+                "dist": "alpine3_12",
+                "sha256": "827f53229a19f4ba5e41547a669d3ecf8d6e2eb38194f07a29d44d29c5e709c0",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-alpine3_12-linux-static.tar.xz",
+                "variant": "static"
+            },
+            {
+                "dist": "alpine3_12",
+                "sha256": "6cd936da14ec57131bdb979d2846e1d3b713cc3d54e0a8d514ef1ba6fff298c1",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-alpine3_12-linux-static-int_native.tar.xz",
+                "variant": "static-int_native"
+            },
+            {
+                "dist": "alpine3_20",
+                "sha256": "a5cc771ca35796fa436fb1912e7248a46e859311fca36b30b432290d1f40a0f2",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-alpine3_20-linux.tar.xz"
+            },
+            {
+                "dist": "centos7",
+                "sha256": "a8e698b32a66c852572a9cca63c39f79db0bac68c31fbf263d274247de4ef049",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-centos7-linux.tar.xz"
+            },
+            {
+                "dist": "deb10",
+                "sha256": "6a9326daa20c0acc1c57ba5fdf54a0d9a7d26e9e819721e71ef24b9e2aeb9eb5",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-deb10-linux.tar.xz"
+            },
+            {
+                "dist": "deb10",
+                "sha256": "6a5946a0a33849957b72278f049888db0679572af00223ae8a961f7d73c30d19",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-deb10-linux-dwarf.tar.xz",
+                "variant": "dwarf"
+            },
+            {
+                "dist": "deb11",
+                "sha256": "0bc7fa1b48efe4dc40f92ad5ae3e6fc132c7918efd06d611df286adc4e5a5d31",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-deb11-linux.tar.xz"
+            },
+            {
+                "dist": "deb12",
+                "sha256": "901bc97e5de9bd32bf65eaa8d3c30a06792d70a899e8e7040a85216f58772741",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-deb12-linux.tar.xz"
+            },
+            {
+                "dist": "deb9",
+                "sha256": "b53c17ea8ccaf74f13d4b09f31bfd3456fbdda250919b7ce35a4743e6c55a617",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-deb9-linux.tar.xz"
+            },
+            {
+                "dist": "fedora33",
+                "sha256": "497621e366e532643f00e5b84f7399f0fc7a0b5df9c28eb53a9277432441feea",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-fedora33-linux.tar.xz"
+            },
+            {
+                "dist": "fedora33",
+                "sha256": "894c60d59c275b29a154f28707c8c435ab286267ea9f3a564fef171584b30d1b",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-fedora33-linux-dwarf.tar.xz",
+                "variant": "dwarf"
+            },
+            {
+                "dist": "fedora38",
+                "sha256": "a28529031d82eed70cdaacf26585ef54560d74ab96d295fdd00b4ffbd3fa0a79",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-fedora38-linux.tar.xz"
+            },
+            {
+                "dist": "rocky8",
+                "sha256": "65542a4772992744d9bb8fbff1c24019e024b058fe36d1dfbf5c6f3426ea3024",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-rocky8-linux.tar.xz"
+            },
+            {
+                "dist": "ubuntu18_04",
+                "sha256": "821a79c9611c3b11400734696fbddeee257d02de1f682e7326dba7b7529d6a22",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-ubuntu18_04-linux.tar.xz"
+            },
+            {
+                "dist": "ubuntu20_04",
+                "sha256": "d4eaaddd93a0e593e052bee0f372ffb8c91fff25650bb4732aac858d30c8350f",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-ubuntu20_04-linux.tar.xz"
+            },
+            {
+                "dist": "ubuntu22_04",
+                "sha256": "3b073c42430164b671e690dc89a88a94f9db6f5fcb228845f200c86662cdcc36",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-ubuntu22_04-linux.tar.xz"
+            }
+        ],
+        "linux_arm64": [
+            {
+                "dist": "alpine3_18",
+                "sha256": "464cbb930a9d4133c6aebe06988f48901a92da069acb79c8b56e4dfe83e3a6c0",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-aarch64-alpine3_18-linux.tar.xz"
+            },
+            {
+                "dist": "deb10",
+                "sha256": "1946fd6587dcf0a5f37f0751144b7f5994301949595c17eaf1e1056adff73ce5",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-aarch64-deb10-linux.tar.xz"
+            },
+            {
+                "dist": "deb12",
+                "sha256": "2b7f65ad98b5c6026e52d4af5ab7c06496280fb522bf36d02d08d1078c9d306e",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-aarch64-deb12-linux.tar.xz"
+            }
+        ],
+        "windows_amd64": [
+            {
+                "dist": "unknown",
+                "sha256": "95214ff83e3e7611f83eb5b094c3d3a19bbf8f197a11be74299c5aa2c848b693",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-unknown-mingw32.tar.xz"
+            },
+            {
+                "dist": "unknown",
+                "sha256": "ca26c78abb941fb1941f84cf7358dd40ab1014ac418c8e4a69a9b6ff96c39a51",
+                "url": "https://downloads.haskell.org/~ghc/9.12.3/ghc-9.12.3-x86_64-unknown-mingw32-int_native.tar.xz",
+                "variant": "int_native"
+            }
+        ]
+    },
     "9.14.1": {
         "darwin_amd64": [
             {
