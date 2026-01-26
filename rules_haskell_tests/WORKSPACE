@@ -83,9 +83,9 @@ bazel_starlib_dependencies()
 # module rules_bazel_integration_test requires bazel >= 6.1.0
 http_archive(
     name = "rules_bazel_integration_test",
-    sha256 = "44ed2cacf9dfdbfd0e2ef60022ca5ada9b11f337ecaec3c428d5003b38043589",
+    sha256 = "d88d0f1e429eff657b74b3e92f02bf0828c6d1e1dc94c319c5b6f43f37918885",
     urls = [
-        "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.28.0/rules_bazel_integration_test.v0.28.0.tar.gz",
+        "https://github.com/bazel-contrib/rules_bazel_integration_test/releases/download/v0.37.0/rules_bazel_integration_test.v0.37.0.tar.gz",
     ],
 )
 
