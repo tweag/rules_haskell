@@ -325,7 +325,18 @@ def link_library_static(hs, cc, _posix, _dep_info, object_files, my_pkg_id, with
     )
     inputs = depset(cc.files, transitive = [object_files])
     args = hs.actions.args()
-    args.add_all(["qc", static_library])
+
+    # On Windows, any of the object files might actually be static archives already
+    # This is because linkers on Windows do not support object merging and GHC
+    # creates an archive of a module's object files and stub object files instead.
+    #
+    # This relies on the L modifier of the ar tool to add archive contents instead.
+    #
+    # See https://github.com/tweag/rules_haskell/issues/2299
+    if hs.toolchain.is_windows:
+        args.add_all(["qcL", static_library])
+    else:
+        args.add_all(["qc", static_library])
     args.add_all(object_files)
 
     if hs.toolchain.is_darwin:
