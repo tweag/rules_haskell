@@ -44,7 +44,7 @@ _haskell_module = rule(
             cfg = "exec",
             default = Label("@rules_haskell//haskell:ghc_wrapper"),
         ),
-        # TODO[AH] Suppport worker
+        # TODO[AH] Support worker
     },
     toolchains = use_cc_toolchain() + [
         "@rules_haskell//haskell:toolchain",

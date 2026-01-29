@@ -191,7 +191,7 @@ def ghc_cc_program_args(hs, cc, ld):
       list of string, GHC arguments.
     """
     args = [
-        # GHC uses C compiler for assemly, linking and preprocessing as well.
+        # GHC uses C compiler for assembly, linking and preprocessing as well.
         "-pgma",
         cc,
         "-pgmc",

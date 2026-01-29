@@ -1284,7 +1284,7 @@ def _parse_package_spec(package_spec, enable_custom_toolchain_libraries, custom_
         if enable_custom_toolchain_libraries and parsed["name"] not in custom_toolchain_libraries:
             fail("""\
 stack considers {name} a toolchain library, but it is not present in the toolchain_libraries attribute of the stack_snapshot rule: {}.
-The {name} library may need to be added explicitely to a custom stack snapshot.
+The {name} library may need to be added explicitly to a custom stack snapshot.
             """.format(custom_toolchain_libraries, name = parsed["name"]))
         else:
             location["type"] = "core"
@@ -2753,7 +2753,7 @@ def stack_snapshot(
             ...,
         )
         ```
-      setup_stack: Do not try to install stack if set to False (only usefull with bzlmod when only the first call to stack_snapshot must do the install).
+      setup_stack: Do not try to install stack if set to False (only useful with bzlmod when only the first call to stack_snapshot must do the install).
       label_builder: A function to build a Label from the context of the caller module extension (only useful with bzlmod until we provide our own module extension).
     """
     typecheck_stackage_extradeps(extra_deps)

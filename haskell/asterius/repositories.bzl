@@ -237,7 +237,7 @@ def rules_haskell_asterius_toolchain(
       ahc_pkg: Label of the `ahc-pkg` binary.
       asterius_binaries: Filegroup containing the asterius top-level binaries.
       full_bundle: Filegroup with the asterius_binaries and all their dependencies.
-      wasm_cc_toolchain: A web asssembly cc toolchain.
+      wasm_cc_toolchain: A web assembly cc toolchain.
       ghcopts: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-ghcopts)
       haddock_flags: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-haddock_flags)
       repl_ghci_args: [see rules_haskell_toolchains](toolchain.html#rules_haskell_toolchains-repl_ghci_args)

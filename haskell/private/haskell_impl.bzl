@@ -870,11 +870,11 @@ def haskell_import_impl(ctx):
         files = depset(target_files),
     )
 
-    # This package haddock informations
+    # This package haddock information
     transitive_html = {id: ctx.file.haddock_html} if ctx.file.haddock_html else {}
     transitive_haddocks = {id: ctx.files.haddock_interfaces}
 
-    # Add dependencies haddock informations
+    # Add dependencies haddock information
     for dep in ctx.attr.deps:
         transitive_html.update(dep[HaddockInfo].transitive_html)
         transitive_haddocks.update(dep[HaddockInfo].transitive_haddocks)

@@ -88,7 +88,7 @@ def _c2hs_library_impl(ctx):
         outputs = [hs_file, chi_file],
         command =
             # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
-            # not in PATH so we add it to PATH explicitely.
+            # not in PATH so we add it to PATH explicitly.
             (
                 """
         export PATH=$PATH:{mingw_bin}

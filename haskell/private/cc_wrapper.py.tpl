@@ -58,7 +58,7 @@ used to avoid command line length limitations.
 
     Bazel 4.0.0 has its own cc_wrapper on macOS which attempts to expand any
     argument starting with `@` as a response file. This will wrongly interpret
-    the follwoing types of arguments as referencing a response file:
+    the following types of arguments as referencing a response file:
 
       -install_name @rpath/...
       -Xlinker -rpath -Xlinker @executable_path/...
@@ -159,7 +159,7 @@ class Args:
             if is_temporary_output(self.output):
                 # GHC with Template Haskell or tools like hsc2hs builds
                 # temporary Haskell binaries linked against libraries, but does
-                # not speficy the required runpaths on the command-line in the
+                # not specify the required runpaths on the command-line in the
                 # context of Bazel.
                 self.rpaths.extend(self.library_paths)
         else:

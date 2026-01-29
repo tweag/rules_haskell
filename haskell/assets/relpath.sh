@@ -6,7 +6,7 @@
 
 # returns relative path to $2=$target from $1=$source
 ## NOTE : path are compared in text only. They don’t have to exist
-##        and they WONT be normalized/escaped
+##        and they WON'T be normalized/escaped
 ## Result in "$return_value"# both $1 and $2 are absolute paths beginning with /
 
 src="$1"
