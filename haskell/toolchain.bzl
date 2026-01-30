@@ -92,7 +92,7 @@ def _run_ghc(
     hs.actions.write(extra_args_file, arguments)
 
     if abi_file != None:
-        # We declare the file containing informations about the call to GHC with --show-iface.
+        # We declare the file containing information about the call to GHC with --show-iface.
         show_iface_file = hs.actions.declare_file("show_iface_%s_%s" % (hs.name, extra_name))
         show_iface_args = hs.actions.args()
         show_iface_args.set_param_file_format("multiline")
@@ -103,7 +103,7 @@ def _run_ghc(
 
         # We create a file containing the name of all the interface files which should not be considered
         # by the caching mechanism to know if recompilation should be triggered.
-        # This behaivour is extensively described in the Note [On the ABI hash] in haskell/experimaental/private/module.bzl
+        # This behaviour is extensively described in the Note [On the ABI hash] in haskell/experimaental/private/module.bzl
         interface_with_abis_list = hs.actions.declare_file("interfaces_%s_%s" % (hs.name, extra_name))
         interface_with_abis_args = hs.actions.args()
         interface_with_abis_args.set_param_file_format("multiline")

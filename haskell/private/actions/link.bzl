@@ -64,7 +64,7 @@ def darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, basename, dynamic):
     # are not directly resolving undefined symbols in the binary. I.e. any
     # indirect shared library dependencies will be removed. This conflicts with
     # Bazel's builtin cc rules, which assume that the final binary will load
-    # all transitive shared library dependencies. In particlar shared libraries
+    # all transitive shared library dependencies. In particular shared libraries
     # produced by Bazel's cc rules never load shared libraries themselves. This
     # causes missing symbols at runtime on MacOS, see #170.
     #

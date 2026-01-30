@@ -571,7 +571,7 @@ def _merge_narrowed_deps_dicts(rule_label, narrowed_deps):
     transitive_dyn_objects = {}
     for dep in narrowed_deps:
         if not HaskellInfo in dep or not HaskellLibraryInfo in dep:
-            fail("{}: depedency {} is not a haskell_library as required when used in narrowed_deps".format(
+            fail("{}: dependency {} is not a haskell_library as required when used in narrowed_deps".format(
                 str(rule_label),
                 str(dep.label),
             ))

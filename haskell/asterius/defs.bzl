@@ -282,21 +282,21 @@ def _asterius_common_impl(is_asterius_test, name, ahc_dist_dep, entry_point, dat
 
 def asterius_test(**kwargs):
     """\
-    A wrapper around the [js_test](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_test) rule compatibe with asterius.
+    A wrapper around the [js_test](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_test) rule compatible with asterius.
 
     Args:
         name: A unique name for this rule.
         ahc_dist_dep:
             The ahc_dist target (built with target="node") to be executed.
         entry_point:
-            If the `entry_point` attribute was overriden in the `ahc_dist_dep` target,
+            If the `entry_point` attribute was overridden in the `ahc_dist_dep` target,
             we need to specify the same here.
         """
     _asterius_common_impl(is_asterius_test = True, **kwargs)
 
 def asterius_binary(**kwargs):
     """\
-    A wrapper around the [js_binary](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_binary) rule compatibe with asterius.
+    A wrapper around the [js_binary](https://github.com/aspect-build/rules_js/blob/main/docs/js_binary.md#js_binary) rule compatible with asterius.
 
     Args:
         name: A unique name for this rule.
@@ -339,7 +339,7 @@ def _name_of_label(label):
 
 def asterius_webpack(name, ahc_dist_dep, entry_point, tags = [], srcs = [], **kwargs):
     """
-    Wapper around webpack that switches to a configuration where asterius targets the browser.
+    Wrapper around webpack that switches to a configuration where asterius targets the browser.
     """
     subfolder_name = paths.dirname(entry_point)
     webpack_cli_name = "{}-asterius-webpack-private".format(name)

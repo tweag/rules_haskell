@@ -730,7 +730,7 @@ def haskell_runfiles(
         base = "@rules_haskell//tools/runfiles:base"):
     """ Convenience wrapper around rules_haskell runfiles library.
 
-    This wrapper is especially usefull with bzlmod, when a haskell library with runfiles is used from another module
+    This wrapper is especially useful with bzlmod, when a haskell library with runfiles is used from another module
     (see [runfiles](https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md)).
 
     ### Usage
