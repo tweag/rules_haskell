@@ -343,7 +343,7 @@ _ghc_bindist = repository_rule(
         "patches": attr.label_list(
             default = [],
             doc =
-                "A list of files that are to be applied as patches afer " +
+                "A list of files that are to be applied as patches after " +
                 "extracting the archive.",
         ),
         "patch_tool": attr.string(
@@ -697,7 +697,7 @@ def configure_python3_toolchain(name, register = True):
     Note that prior to Bazel 0.27, there was no check to ensure that the interpreter's version matched the version declared by the target (#4815). If your build worked prior to Bazel 0.27, and you're sure your targets do not require Python 3, you can opt out of this version check by using the non-strict autodetecting toolchain instead of the standard autodetecting toolchain. This can be done by passing the flag `--extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict` on the command line or adding it to your bazelrc.
     ```
 
-    This function defins a custom auto detcting Python toolchain that looks for
+    This function defins a custom auto detecting Python toolchain that looks for
     a Python 3 interpreter within a repository rule, so that Bazel's sandboxing
     does not restrict the visible installation paths. It then registers an
     appropriate Python toolchain, so that build actions themselves can still be

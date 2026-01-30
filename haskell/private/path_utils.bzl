@@ -394,7 +394,7 @@ def create_rpath_entry(
         dependency,
         keep_filename,
         prefix = ""):
-    """Return a (relative) path that points from `binary` to `dependecy`
+    """Return a (relative) path that points from `binary` to `dependency`
     while not leaving the current bazel runpath, taking into account weird
     corner cases of `.short_path` concerning external repositories.
     The resulting entry should be able to be inserted into rpath or similar.

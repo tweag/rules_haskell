@@ -217,11 +217,11 @@ def _haskell_proto_aspect_impl(target, ctx):
     # haskell_library_impl().
     [hs_info, cc_info, cc_shared_library_info, _coverage_info, default_info, library_info, output_groups] = _haskell_library_impl(patched_ctx)
 
-    # Build haddock informations
+    # Build haddock information
     transitive_html = {}
     transitive_haddocks = {}
 
-    # Add dependencies haddock informations
+    # Add dependencies haddock information
     for dep in ctx.toolchains["@rules_haskell//protobuf:toolchain"].deps:
         if HaddockInfo in dep:
             transitive_html.update(dep[HaddockInfo].transitive_html)

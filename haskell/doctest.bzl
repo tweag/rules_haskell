@@ -149,7 +149,7 @@ def _haskell_doctest_single(target, ctx):
         # doctest needs PATH to call GHC and the C compiler and linker.
         export PATH
         # signal our cc_wrapper to silence linker outputs as GHC < 9.4 writes that to
-        # the GHCI ouput which interferes with doctest's expected ouput
+        # the GHCI output which interferes with doctest's expected output
         export RULES_HASKELL_SILENCE_LINKER=1
         {doctest} "$@" {inputs} > {output} 2>&1 || (rc=$? && cat {output} && exit $rc)
         """.format(

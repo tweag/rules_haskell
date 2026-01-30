@@ -28,7 +28,7 @@ def asterius_tools_config(exec_cc_toolchain, posix_toolchain, node_toolchain, to
     return struct(
         # Asterius needs node in the path to evaluate template
         # haskell. And the asterius bundle depends on the posix toolchain
-        # because it containts wrapper scripts.
+        # because it contains wrapper scripts.
         path_for_run_ghc = posix_toolchain.paths + node_paths,
         path_for_cabal = node_paths,
         tools_for_ghc = node_toolchain.nodeinfo.tool_files,

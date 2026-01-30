@@ -390,7 +390,7 @@ def make_relocatable_paths(line):
     # On other systems paths may be relative to the distdir.
     # These paths are invalid in the package configuration.
     #
-    # Replace each ocurrence of either kind of path by one relative to ${pkgroot}.
+    # Replace each occurrence of either kind of path by one relative to ${pkgroot}.
     line = re.sub(re.escape(cfg_execroot) + r'\S*', make_relative_to_pkgroot, line)
     return line
 
