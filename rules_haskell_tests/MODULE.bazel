@@ -81,8 +81,15 @@ bazel_dep(
 )
 bazel_dep(
     name = "protobuf",
-    version = "28.0",
+    version = "28.3",
     repo_name = "com_google_protobuf",
+)
+single_version_override(
+    module_name = "protobuf",
+    # see https://github.com/protocolbuffers/protobuf/issues/16844
+    # TODO: remove for protobuf version >= 31.0
+    patches = ["//:patches/com_google_protobuf-protoc-dbghlp.diff"],
+    patch_strip = 1,
 )
 bazel_dep(
     name = "zlib",

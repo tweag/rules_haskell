@@ -136,7 +136,7 @@ def rules_haskell_dependencies():
         ],
         patches = [
             # see https://github.com/protocolbuffers/protobuf/issues/16844
-            # TODO: remove for protobuf version >= 32.0
+            # TODO: remove for protobuf version >= 31.0
             "@rules_haskell//haskell:private/com_google_protobuf-protoc-dbghlp.diff",
         ],
         patch_args = ["-p1"],
