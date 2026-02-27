@@ -18,6 +18,9 @@ common --incompatible_require_linker_input_cc_api
 common --incompatible_disallow_empty_glob=true
 common --experimental_cc_shared_library
 
+# newer Bazel versions need to use cc_shared_library, so enable that for Bazel 6.x too
+common --experimental_cc_shared_library
+
 # explicitly disable sandboxing exclusive tests (it was false in Bazel 6, but is true in Bazel 7+)
 # (otherise this causes some integration tests to fail)
 common --noincompatible_exclusive_test_sandboxed
