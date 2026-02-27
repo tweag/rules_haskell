@@ -50,6 +50,7 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
       CcInteropInfo: Information needed for CC interop.
     """
     ccs = [dep[CcInfo] for dep in ctx.attr.deps if CcInfo in dep and HaskellInfo not in dep]
+    cc_shared_libraries = [dep[CcSharedLibraryInfo] for dep in ctx.attr.deps if CcSharedLibraryInfo in dep]
 
     hdrs = []
     include_args = []
@@ -160,6 +161,10 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     plugin_libraries = _transitive_libraries_from_attr(ctx, "plugins")
     setup_libraries = _transitive_libraries_from_attr(ctx, "setup_deps")
 
+    # Collect direct libraries from both CcInfo and CcSharedLibraryInfo
+    direct_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]
+    direct_libraries.extend([lib for info in cc_shared_libraries for lib in info.linker_input.libraries])
+
     return CcInteropInfo(
         tools = struct(**tools),
         env = env,
@@ -174,7 +179,7 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
         cc_libraries_info = cc_libraries_info,
-        cc_libraries = get_cc_libraries(cc_libraries_info, [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]),
+        cc_libraries = get_cc_libraries(cc_libraries_info, direct_libraries),
         transitive_libraries = transitive_libraries,
         plugin_libraries = plugin_libraries,
         setup_libraries = setup_libraries,
