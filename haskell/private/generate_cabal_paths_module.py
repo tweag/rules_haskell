@@ -42,7 +42,7 @@ def normalise_arch(arch):
     return arch
  
 def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_basename, cabal_dirname,
-                                ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
+                                repo_name, ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
 
     # cabal calls ghc --info to recover the target arch and os, and uses these in path names.
     # https://github.com/haskell/cabal/blob/496d6fcc26779e754523a6cc7576aea49ef8056e/Cabal/src/Distribution/Simple/GHC/Internal.hs#L87
@@ -177,7 +177,7 @@ version :: Version
 {version_definition}
 
 s = [pathSeparator]
-dataDirWorkspacePath = "{workspace}"++s++"{cabal_dirname}"++s++"_install"++s++"{datadir}"
+dataDirWorkspacePath = "{repo_name}"++s++"_install"++s++"{datadir}"
 packageName = "{component_name}"
 
 libdir = "{libdir}"
@@ -257,6 +257,7 @@ isPathSeparator :: Char -> Bool
         bindir = bindir,
         datadir = datadir,
         cabal_dirname = cabal_dirname,
+        repo_name = repo_name,
         workspace = workspace,
         other_functions = other_functions,
     )

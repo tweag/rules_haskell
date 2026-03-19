@@ -197,7 +197,8 @@ def _prepare_cabal_inputs(
         generate_paths_module,
         is_library = False,  # @unused
         dynamic_file = None,
-        static_binary = True):
+        static_binary = True,
+        label = None):
     """Compute Cabal wrapper, arguments, inputs."""
     with_profiling = is_profiling_enabled(hs)
 
@@ -349,6 +350,10 @@ def _prepare_cabal_inputs(
     # Redundant with _binary_paths() above, but better be explicit when we can.
     path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
 
+    repo_name = "_main"
+    if generate_paths_module and label:
+        repo_name = label.repo_name
+
     args = struct(
         component = component,
         pkg_name = package_id,
@@ -364,6 +369,7 @@ def _prepare_cabal_inputs(
         ghc_version = ghc_version,
         cabal_basename = cabal.basename,
         cabal_dirname = cabal.dirname,
+        repo_name = repo_name,
         extra_ldflags_file = extra_ldflags_file.path if extra_ldflags_file else None,
         package_databases = [p.path for p in package_databases.to_list()],
     )
@@ -598,6 +604,7 @@ def _haskell_cabal_library_impl(ctx):
         generate_paths_module = ctx.attr.generate_paths_module,
         dynamic_file = dynamic_library,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if with_haddock else depset([]),
+        label = ctx.label,
     )
     outputs = [
         package_database,
@@ -933,6 +940,7 @@ def _haskell_cabal_binary_impl(ctx):
         dynamic_file = binary,
         transitive_haddocks = _gather_transitive_haddocks(ctx.attr.deps) if hs.tools_config.supports_haddock else depset([]),
         static_binary = static_binary,
+        label = ctx.label,
     )
     (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
