@@ -479,7 +479,7 @@ def _haskell_cabal_library_impl(ctx):
 
     is_empty = False
     ignore_setup = False
-    with_haddock = hs.tools_config.supports_haddock
+    with_haddock = hs.tools_config.supports_haddock and ctx.attr.haddock
     if ctx.attr.cabal_args:
         cabal_args = ctx.attr.cabal_args[HaskellCabalArgsInfo]
 
