@@ -10,7 +10,7 @@ They are however visible from the `nix_haskell_toolchains_configurations` reposi
   - `toolchains` contains the configuration of these toolchains.
 """
 
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
+load("@rules_cc//cc/toolchains:toolchain_config_utils.bzl", "get_cpu_value")
 load(
     "@nix_haskell_toolchains_configurations//:nix_haskell_toolchains_configurations.bzl",
     "ghc_labels",

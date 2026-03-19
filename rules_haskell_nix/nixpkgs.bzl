@@ -1,6 +1,7 @@
 """Workspace rules (Nixpkgs)"""
 
-load("@bazel_tools//tools/cpp:lib_cc_configure.bzl", "get_cpu_value")
+load("@rules_cc//cc/toolchains:toolchain_config_utils.bzl", "get_cpu_value")
+
 load(
     "@rules_haskell//haskell:private/pkgdb_to_bzl.bzl",
     "pkgdb_to_bzl",
