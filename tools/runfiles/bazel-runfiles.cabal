@@ -7,7 +7,7 @@ cabal-version: 1.12
 -- hash: 2d03e51b7185a37fee957310080775c2716d5f4b770c0593fb28788316469f0a
 
 name:           bazel-runfiles
-version:        0.12
+version:        0.13
 synopsis:       Locate Bazel runfiles location
 description:    Please see the README on GitHub at <https://github.com/tweag/rules_haskell/blob/master/tools/runfiles/README.md>
 category:       Build Tool
@@ -36,6 +36,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , containers
     , directory
     , filepath
     , transformers
