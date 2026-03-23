@@ -50,13 +50,13 @@ def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_b
     p = Popen(f"{ghc} --info", shell=True, stdout=PIPE)
     ghc_info_string = p.stdout.read().decode("utf-8")
     ghc_info = ast.literal_eval("("+ghc_info_string+")")
+    ghc_version_string = ".".join((str(n) for n in ghc_version))
     for (k, v) in ghc_info:
         if k == "Target platform":
             m = re.match("([^-]*)-[^-]*-([^-]*)", v, re.IGNORECASE)
             if m:
                 target_arch = normalise_arch(m.group(1))
                 target_os = normalise_os(m.group(2))
-                ghc_version_string = ".".join((str(n) for n in ghc_version))
                 config = f"{target_arch}-{target_os}-ghc-{ghc_version_string}"
 
     # Cabal 3.12+ (shipped with GHC 9.10+) extracts an ABI tag from
