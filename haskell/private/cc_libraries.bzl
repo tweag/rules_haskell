@@ -223,6 +223,14 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
         ]),
         # XXX: Set user_link_flags.
         "ld-options": depset(direct = [
+            # Add the directory of the binary/library itself to the search
+            # path.  GHC ≥ 9.10 may turn former direct C-library deps into
+            # transitive deps of an intermediate shared object.  At runtime
+            # Bazel places both the shared object and its C deps into the
+            # same _solib directory, so $ORIGIN (or @loader_path on macOS)
+            # is enough to find them.
+            "-Wl,-rpath,%s" % relative_rpath_prefix(hs.toolchain.is_darwin),
+        ] + [
             "-Wl,-rpath,%s" % create_rpath_entry(
                 binary = binary,
                 dependency = lib,
