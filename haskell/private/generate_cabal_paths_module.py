@@ -59,6 +59,19 @@ def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_b
                 ghc_version_string = ".".join((str(n) for n in ghc_version))
                 config = f"{target_arch}-{target_os}-ghc-{ghc_version_string}"
 
+    # Cabal 3.12+ (shipped with GHC 9.10+) extracts an ABI tag from
+    # "Project Unit Id" in ghc --info and appends it to the platform string
+    # used in install-directory paths (libexecdir, libsubdir, etc.).
+    # We replicate the same logic so that our generated Paths module matches
+    # the one Cabal would produce.
+    # See: Distribution.Simple.GHC  (compilerAbiTag extraction)
+    for (k, v) in ghc_info:
+        if k == "Project Unit Id":
+            prefix = f"ghc-{ghc_version_string}-"
+            if v.startswith(prefix) and len(v) > len(prefix):
+                config = f"{config}-{v[len(prefix):]}"
+            break
+
     # Recover the package version and name from the cabal file
     with open(cabal_basename) as cabal_file:
         cabal_file_content = cabal_file.readlines()
