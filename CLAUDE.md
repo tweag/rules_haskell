@@ -113,7 +113,7 @@ GHC versions are managed through:
 - `haskell/ghc_bindist.bzl` - Binary distribution support
 - `stackage_snapshot.yaml` and version-specific variants (`stackage_snapshot_9.4.8.yaml`, etc.)
 
-Supported GHC versions: 9.4.8 (default), 9.6.5, 9.8.2
+Supported GHC versions: 9.4.8 (default), 9.6.5, 9.8.2, 9.10.3
 
 Set GHC version via environment variable:
 ```bash
