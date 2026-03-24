@@ -1,0 +1,36 @@
+# Check that we manage to access the runfile while using the generate_paths_module attribute of haskell_cabal_library
+
+load("@os_info//:os_info.bzl", "is_windows")
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+)
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "lib-pkg-outside",
+    package_name = "lib-pkg-outside",
+    srcs = [
+        "subdir/Lib.hs",
+        "subdir/datafile",
+        "subdir/lib.cabal",
+    ],
+    generate_paths_module = True,
+    tags = ["skip_profiling"],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = ["@rules_haskell//tools/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
