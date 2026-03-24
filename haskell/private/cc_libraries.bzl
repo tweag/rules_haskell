@@ -162,6 +162,64 @@ def link_libraries(libs, args, get_dirname = get_dirname, prefix_optl = False):
         args.extend([dirfmt % get_dirname(lib) for lib in libs])
         args.extend([libfmt % get_lib_name(lib) for lib in libs])
 
+def _ld_options(hs, binary, dynamic_libs, cc_dynamic_libs):
+    """Build ld-options for the link-config package.
+
+    Handles rpath entries for runtime library lookup and, on ELF platforms,
+    wraps C library flags with --no-as-needed so that transitive C deps
+    always receive DT_NEEDED entries.
+
+    Args:
+      hs: Haskell context.
+      binary: The binary or shared library being linked.
+      dynamic_libs: All dynamic libraries (Haskell + C).
+      cc_dynamic_libs: Only C dynamic libraries.
+
+    Returns:
+      list of string, linker flags.
+    """
+    if hs.toolchain.is_windows:
+        return []
+
+    opts = [
+        # Add the directory of the binary/library itself to the search
+        # path.  GHC >= 9.10 may turn former direct C-library deps into
+        # transitive deps of an intermediate shared object.  At runtime
+        # Bazel places both the shared object and its C deps into the
+        # same _solib directory, so $ORIGIN (or @loader_path on macOS)
+        # is enough to find them.
+        "-Wl,-rpath,%s" % relative_rpath_prefix(hs.toolchain.is_darwin),
+    ] + [
+        "-Wl,-rpath,%s" % create_rpath_entry(
+            binary = binary,
+            dependency = lib,
+            keep_filename = False,
+            prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
+        )
+        for lib in dynamic_libs
+    ]
+
+    # On ELF platforms (Linux), the default --as-needed linker behaviour
+    # may drop shared libraries whose symbols are only needed transitively
+    # by other shared libraries.  For example, if libcbits.so calls into
+    # libcbits-indirect.so but the Haskell code only references libcbits.so,
+    # the linker omits libcbits-indirect.so from DT_NEEDED, causing a
+    # runtime symbol-lookup failure.
+    #
+    # We emit explicit -l flags for every C dynamic library inside a
+    # --no-as-needed / --as-needed bracket so that each one receives a
+    # DT_NEEDED entry regardless of direct symbol usage.
+    if not hs.toolchain.is_darwin and cc_dynamic_libs:
+        opts.append("-Wl,--no-as-needed")
+        for lib in cc_dynamic_libs:
+            opts.extend([
+                "-L" + lib.dirname,
+                "-l" + get_lib_name(lib),
+            ])
+        opts.append("-Wl,--as-needed")
+
+    return opts
+
 def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, args, dynamic = None, pic = None, dirprefix = ""):
     """Configure linker flags and inputs.
 
@@ -222,24 +280,12 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
             for lib in libs
         ]),
         # XXX: Set user_link_flags.
-        # -rpath is not supported on Windows, only add on Unix platforms.
-        "ld-options": depset(direct = ([
-            # Add the directory of the binary/library itself to the search
-            # path.  GHC ≥ 9.10 may turn former direct C-library deps into
-            # transitive deps of an intermediate shared object.  At runtime
-            # Bazel places both the shared object and its C deps into the
-            # same _solib directory, so $ORIGIN (or @loader_path on macOS)
-            # is enough to find them.
-            "-Wl,-rpath,%s" % relative_rpath_prefix(hs.toolchain.is_darwin),
-        ] + [
-            "-Wl,-rpath,%s" % create_rpath_entry(
-                binary = binary,
-                dependency = lib,
-                keep_filename = False,
-                prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
-            )
-            for lib in dynamic_libs
-        ]) if not hs.toolchain.is_windows else []),
+        "ld-options": depset(direct = _ld_options(
+            hs,
+            binary,
+            dynamic_libs,
+            cc_dynamic_libs,
+        )),
     })
     cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
