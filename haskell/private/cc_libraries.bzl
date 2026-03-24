@@ -222,7 +222,8 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
             for lib in libs
         ]),
         # XXX: Set user_link_flags.
-        "ld-options": depset(direct = [
+        # -rpath is not supported on Windows, only add on Unix platforms.
+        "ld-options": depset(direct = ([
             # Add the directory of the binary/library itself to the search
             # path.  GHC ≥ 9.10 may turn former direct C-library deps into
             # transitive deps of an intermediate shared object.  At runtime
@@ -238,7 +239,7 @@ def create_link_config(hs, posix, cc_libraries_info, libraries_to_link, binary, 
                 prefix = relative_rpath_prefix(hs.toolchain.is_darwin),
             )
             for lib in dynamic_libs
-        ]),
+        ]) if not hs.toolchain.is_windows else []),
     })
     cache_file = ghc_pkg_recache(hs, posix, conf_file)
 
