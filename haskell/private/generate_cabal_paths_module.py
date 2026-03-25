@@ -16,6 +16,7 @@ import re
 import os
 import json
 import ast
+import tempfile
 from subprocess import (Popen, PIPE)
 
 def normalise_os(os):
@@ -50,14 +51,47 @@ def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_b
     p = Popen(f"{ghc} --info", shell=True, stdout=PIPE)
     ghc_info_string = p.stdout.read().decode("utf-8")
     ghc_info = ast.literal_eval("("+ghc_info_string+")")
+    ghc_version_string = ".".join((str(n) for n in ghc_version))
     for (k, v) in ghc_info:
         if k == "Target platform":
             m = re.match("([^-]*)-[^-]*-([^-]*)", v, re.IGNORECASE)
             if m:
                 target_arch = normalise_arch(m.group(1))
                 target_os = normalise_os(m.group(2))
-                ghc_version_string = ".".join((str(n) for n in ghc_version))
-                config = f"{target_arch}-{target_os}-ghc-{ghc_version_string}"
+
+    # Use Cabal's showCompilerIdWithAbi to get the compiler ID string.
+    # Cabal 3.12+ (shipped with GHC 9.10+) includes an ABI tag (e.g.
+    # "ghc-9.10.3-inplace"), older Cabal versions omit it (e.g. "ghc-9.4.8").
+    # Delegating to Cabal ensures our Paths module matches its conventions.
+    compiler_id_script = """\
+import Distribution.Simple.Compiler (showCompilerIdWithAbi)
+import Distribution.Simple.Configure (configCompilerEx)
+import Distribution.Compiler (CompilerFlavor(GHC))
+import Distribution.Simple.Program (defaultProgramDb)
+import Distribution.Verbosity (silent)
+
+main :: IO ()
+main = do
+  (comp, _platform, _progDb) <- configCompilerEx (Just GHC) Nothing Nothing defaultProgramDb silent
+  putStrLn $ showCompilerIdWithAbi comp
+"""
+    with tempfile.NamedTemporaryFile(suffix='.hs', mode='w', delete=False) as f:
+        f.write(compiler_id_script)
+        script_path = f.name
+    try:
+        env = os.environ.copy()
+        ghc_dir = os.path.dirname(os.path.abspath(ghc))
+        env["PATH"] = ghc_dir + os.pathsep + env.get("PATH", "")
+        p = Popen([ghc, "--run", "-package", "Cabal", script_path],
+                  stdout=PIPE, stderr=PIPE, env=env)
+        stdout, stderr = p.communicate()
+        compiler_id = stdout.decode("utf-8").strip() if p.returncode == 0 else ""
+    finally:
+        os.unlink(script_path)
+    if compiler_id:
+        config = f"{target_arch}-{target_os}-{compiler_id}"
+    else:
+        config = f"{target_arch}-{target_os}-ghc-{ghc_version_string}"
 
     # Recover the package version and name from the cabal file
     with open(cabal_basename) as cabal_file:
