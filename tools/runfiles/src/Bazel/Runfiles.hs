@@ -305,7 +305,10 @@ parseCurrentRepo path | isAbsolute path =
     parseAbsolutePath [] = ""
 
 parseCurrentRepo path =
-  case splitDirectories path of
-    "bazel-out":_:"bin":"external":currentRepo:_ -> currentRepo
-    "external":currentRepo:_ -> currentRepo
-    _ -> ""
+  let parseCurrentRepoSplit pathList =
+        case pathList of
+          "bazel-out":_:"bin":"external":currentRepo:_ -> currentRepo
+          "external":currentRepo:_ -> currentRepo
+          "..":rest -> parseCurrentRepoSplit rest
+          _ -> ""
+   in parseCurrentRepoSplit (splitDirectories path)

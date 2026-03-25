@@ -88,6 +88,13 @@ cc_library(
         urls = ["https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz"],
     )
 
+    http_archive(
+        name = "runfiles_repo",
+        build_file = "//tests:haskell_cabal_datafiles/BUILD.external-repo",
+        url = "file:./tests/haskell_cabal_datafiles/external-repo.tar",
+        integrity = "sha256-pQVTQmtR1JaDPeLQvAOhUrHZIHKhlpxUP00XowH5PoQ=",
+    )
+
 def _non_module_deps_impl(_ctx):
     repositories(bzlmod = True)
 
