@@ -263,6 +263,7 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
             is_windows = is_windows,
             cabal_basename = json_args["cabal_basename"],
             cabal_dirname = json_args["cabal_dirname"],
+            repo_name = json_args["repo_name"],
             ghc = ghc,
             libdir = os.path.basename(libdir),
             dynlibdir = os.path.basename(dynlibdir),

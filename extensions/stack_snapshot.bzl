@@ -194,7 +194,8 @@ def _add_packages(conf, module, root_or_rules_haskell):
             # Some packages have default components set
             conf.components[package_name] = package_tag.components
         if package_tag.components_args:
-            conf.components[package_name] = package_tag.components_args
+            for (local_name, target) in package_tag.components_args.items():
+                conf.components_args[package_name + ":" + local_name] = target
         if package_tag.components_dependencies:
             conf.components_dependencies[package_name] = json.encode(package_tag.components_dependencies)
         if package_tag.extra_deps:
@@ -298,7 +299,7 @@ def _stack_snapshot_impl(mctx):
             if module.tags.haddock:
                 _assert_unique_tag(module.tags.haddock, "haddock", module)
                 haddock_tag = module.tags.haddock[0]
-                kwargs["haddock"] = haddock_tag.label
+                kwargs["haddock"] = haddock_tag.value
         else:
             _assert_no_root_tags(module)
 

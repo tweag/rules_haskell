@@ -118,6 +118,7 @@ use_repo(
     "library_repo",
     "os_info",
     "zlib.hs",
+    "runfiles_repo",
 )
 
 non_modules_deps_1 = use_extension("//:non_module_deps_1.bzl", "non_module_deps_1")
