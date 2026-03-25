@@ -42,7 +42,7 @@ def normalise_arch(arch):
     return arch
  
 def generate_cabal_paths_module(component_name, ghc_version, is_windows, cabal_basename, cabal_dirname,
-                                ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
+                                repo_name, ghc, libdir, dynlibdir, bindir, datadir, pkgroot, workspace):
 
     # cabal calls ghc --info to recover the target arch and os, and uses these in path names.
     # https://github.com/haskell/cabal/blob/496d6fcc26779e754523a6cc7576aea49ef8056e/Cabal/src/Distribution/Simple/GHC/Internal.hs#L87
@@ -125,6 +125,13 @@ getSysconfDir = catchIO (getEnv $ packageName++"_sysconfdir") (\_ -> getPrefixDi
 
 """
 
+    if repo_name == "_main":
+        base_data_path = workspace + path_separator + cabal_dirname
+    else:
+        base_data_path = repo_name
+        if cabal_dirname.startswith("external" + path_separator + repo_name):
+            base_data_path = cabal_dirname.removeprefix("external" + path_separator)
+
     rebindable_syntax_pragma = ("{-# LANGUAGE NoRebindableSyntax #-}"
                                 if supports_rebindable_syntax else "")
     if supports_cpp:
@@ -177,7 +184,7 @@ version :: Version
 {version_definition}
 
 s = [pathSeparator]
-dataDirWorkspacePath = "{workspace}"++s++"{cabal_dirname}"++s++"_install"++s++"{datadir}"
+dataDirWorkspacePath = "{base_data_path}"++s++"_install"++s++"{datadir}"
 packageName = "{component_name}"
 
 libdir = "{libdir}"
@@ -257,6 +264,7 @@ isPathSeparator :: Char -> Bool
         bindir = bindir,
         datadir = datadir,
         cabal_dirname = cabal_dirname,
+        base_data_path = base_data_path,
         workspace = workspace,
         other_functions = other_functions,
     )
