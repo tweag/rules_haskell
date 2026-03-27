@@ -9,6 +9,12 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+cc_shared_library(
+    name = "ourclibrary-shared",
+    deps = ["ourclibrary"],
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "ourclibrary-static",
     srcs = [":ourclibrary.c"],
