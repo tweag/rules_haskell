@@ -129,10 +129,10 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "7c3ebd7aaedd86fa5dc479a0fda803f602caaf78d8aff7ce83b89e1b8ae7442a",
-        strip_prefix = "protobuf-28.3",
+        sha256 = "a83103b7ed3afaeedee9a212c8f65825444f58144f5e075b73c83f2b4ff27b62",
+        strip_prefix = "protobuf-34.1",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v28.3.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v34.1.tar.gz",
         ],
         patches = [
             # see https://github.com/protocolbuffers/protobuf/issues/16844
