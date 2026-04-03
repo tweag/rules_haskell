@@ -100,8 +100,9 @@ os.environ["RULES_HASKELL_GHC_PATH"] = canonicalize_path(os.getenv("RULES_HASKEL
 os.environ["RULES_HASKELL_GHC_PKG_PATH"] = canonicalize_path(os.getenv("RULES_HASKELL_GHC_PKG_PATH", ""))
 os.environ["RULES_HASKELL_LIBDIR_PATH"] = canonicalize_path(os.getenv("RULES_HASKELL_LIBDIR_PATH", ""))
 os.environ["RULES_HASKELL_DOCDIR_PATH"] = canonicalize_path(os.getenv("RULES_HASKELL_DOCDIR_PATH", ""))
-if "LOCALE_ARCHIVE" in os.environ:
-    os.environ["LOCALE_ARCHIVE"] = canonicalize_path(os.getenv("LOCALE_ARCHIVE"))
+for path in ["LOCALE_ARCHIVE", "CC_WRAPPER_PATH", "CC_WRAPPER_MANIFEST"]:
+    if path in os.environ:
+        os.environ[path] = canonicalize_path(os.getenv(path))
 
 component = json_args["component"]
 name = json_args["pkg_name"]
