@@ -26,8 +26,8 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
     hs_out = declare_compiled(hs, hsc_file, ".hs", directory = hsc_dir_raw)
     args.add_all([hsc_file.path, "-o", hs_out.path])
 
-    args.add_all(["-c", cc.tools.cc])
-    args.add_all(["-l", cc.tools.cc])
+    args.add_all(["-c", cc.tools.cc.executable.path])
+    args.add_all(["-l", cc.tools.cc.executable.path])
     args.add("-ighcplatform.h")
     args.add("-ighcversion.h")
     args.add_all(cc.cpp_flags, format_each = "--cflag=%s")
@@ -64,11 +64,9 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
         inputs = depset(transitive = [
             depset(cc.hdrs),
             depset([hsc_file]),
-            depset(cc.files),
             depset(hsc_inputs),
             depset(hs.toolchain.bindir),
         ]),
-        input_manifests = cc.manifests,
         outputs = [hs_out],
         mnemonic = "HaskellHsc2hs",
         command =
@@ -84,12 +82,13 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
             include_dirs_args=( "${{include_dirs[@]/#/-C-I}}" )
             {hsc2hs} "${{include_dirs_args[@]}}" "$@"
             """.format(
-                mingw_bin = paths.dirname(cc.tools.cc) if hs.toolchain.is_windows else "",
+                mingw_bin = paths.dirname(cc.tools.cc.executable.path) if hs.toolchain.is_windows else "",
                 ghc_pkg = hs.tools.ghc_pkg.path,
                 hsc2hs = hs.tools.hsc2hs.path,
             ),
         arguments = [args],
         env = hs.env,
+        tools = [cc.tools.cc.as_tool],
     )
 
     idir = paths.join(

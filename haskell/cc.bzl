@@ -118,13 +118,10 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     # Generate cc wrapper script on Darwin that adjusts load commands.
     hs_toolchain = ctx.toolchains["@rules_haskell//haskell:toolchain"]
     cc_wrapper = hs_toolchain.cc_wrapper
-    cc = cc_wrapper.executable.path
-    cc_files = depset(transitive = [cc_toolchain.all_files, cc_wrapper.inputs])
-    cc_manifests = cc_wrapper.manifests
 
     tools = {
         "ar": cc_toolchain.ar_executable,
-        "cc": cc,
+        "cc": cc_wrapper,
         "ld": cc_toolchain.ld_executable,
         "cpp": cc_toolchain.preprocessor_executable,
         "nm": cc_toolchain.nm_executable,
@@ -163,8 +160,6 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     return CcInteropInfo(
         tools = struct(**tools),
         env = env,
-        files = cc_files.to_list(),
-        manifests = cc_manifests,
         hdrs = hdrs.to_list(),
         cpp_flags = cpp_flags,
         include_args = include_args,

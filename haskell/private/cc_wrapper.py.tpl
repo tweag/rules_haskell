@@ -571,6 +571,11 @@ def link(output, libraries, rpaths, args):
         rpaths = shorten_rpaths(rpaths, libraries, output)
 
     args.extend(rpath_args(rpaths))
+    # See note in cabal_wrapper.py
+    if "RUNFILES_DIR" in os.environ:
+        del os.environ["RUNFILES_DIR"]
+    if "RUNFILES_MANIFEST_FILE" in os.environ:
+        del os.environ["RUNFILES_MANIFEST_FILE"]
     # Note: `RULES_HASKELL_SILENCE_LINKER` is only set if called from doctest,
     #       which is used to silence the linker output to not interfere with the output
     #       from GHCi
