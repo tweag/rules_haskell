@@ -147,7 +147,11 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         env["CC_WRAPPER_PLATFORM"] = "linux"
 
     env["CC_WRAPPER_CC_PATH"] = real_cc_path
+    env["CC_WRAPPER_PATH"] = cc_wrapper.executable.path
     env["CC_WRAPPER_CPU"] = cc_toolchain.cpu
+
+    if cc_wrapper.as_tool.runfiles_manifest:
+        env["CC_WRAPPER_MANIFEST"] = cc_wrapper.as_tool.runfiles_manifest.path
 
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
         ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),

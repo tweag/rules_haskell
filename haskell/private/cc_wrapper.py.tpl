@@ -1026,6 +1026,13 @@ def find_cc():
         # being called from a GHCi REPL then we need to find this wrapper
         # script using Bazel runfiles.
         r = bazel_runfiles.Create()
+        if r is None:
+            manifest_path = os.environ.get("CC_WRAPPER_MANIFEST", None)
+            exe_path = os.environ.get("CC_WRAPPER_PATH", None)
+            if manifest_path is not None:
+                r = bazel_runfiles.CreateManifestBased(manifest_path)
+            elif exe_path is not None:
+                r = bazel_runfiles.CreateDirectoryBased(exe_path + ".runfiles")
         cc = r.Rlocation("/".join([WORKSPACE, CC]))
         if cc is None and is_windows():
             # We must use "/" instead of os.path.join on Windows, because the
