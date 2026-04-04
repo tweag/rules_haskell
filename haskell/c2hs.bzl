@@ -31,7 +31,6 @@ def _c2hs_library_impl(ctx):
     )
     args = hs.actions.args()
     c2hs = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs
-    c2hs_exe = ctx.toolchains["@rules_haskell//haskell/c2hs:toolchain"].c2hs_exe
 
     if len(ctx.files.srcs) != 1:
         fail("srcs field should contain exactly one file.")
@@ -44,7 +43,7 @@ def _c2hs_library_impl(ctx):
     args.add_all([chs_file.path, "-o", hs_file.path])
 
     args.add("-C-E")
-    args.add_all(["--cpp", cc.tools.cc])
+    args.add_all(["--cpp", cc.tools.cc.executable.path])
     args.add("-C-includeghcplatform.h")
     args.add("-C-includeghcversion.h")
     args.add_all(["-C" + x for x in cc.cpp_flags])
@@ -70,21 +69,16 @@ def _c2hs_library_impl(ctx):
         (version_macro_headers, version_macro_flags) = version_macro_includes(dep_info)
         args.add_all(["-C" + x for x in version_macro_flags])
 
-    (inputs, input_manifests) = ctx.resolve_tools(tools = [c2hs])
-
     hs.actions.run_shell(
         inputs = depset(transitive = [
             depset(cc.hdrs),
             depset([chs_file]),
             depset(dep_chi_files),
-            depset(cc.files),
             depset(hs.toolchain.bindir),
             depset(hs.toolchain.libdir),
             set.to_depset(version_macro_headers),
-            inputs,
         ]),
-        input_manifests = input_manifests,
-        tools = [hs.tools.ghc_pkg, c2hs_exe],
+        tools = [hs.tools.ghc_pkg, c2hs, cc.tools.cc.as_tool],
         outputs = [hs_file, chi_file],
         command =
             # cpp (called via c2hs) gets very unhappy if the mingw bin dir is
@@ -103,7 +97,7 @@ def _c2hs_library_impl(ctx):
         {c2hs} "${{include_dirs_args[@]}}" "$@"
         """.format(
                 ghc_pkg = hs.tools.ghc_pkg.path,
-                c2hs = c2hs_exe.path,
+                c2hs = c2hs.executable.path,
             ),
         mnemonic = "HaskellC2Hs",
         arguments = [args],
@@ -159,12 +153,10 @@ def _c2hs_toolchain_impl(ctx):
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
-            # We have both c2hs which points to the target and c2hs_exe
-            # which points to the file. The former is used to collect
-            # runfiles while the latter is used to get the path to
-            # c2hs.
-            c2hs = ctx.attr.c2hs,
-            c2hs_exe = ctx.executable.c2hs,
+            # Get a FilesToRunProvider which can be used to insert all the
+            # necessary files for the tool into the environment of an action
+            # run.
+            c2hs = ctx.attr.c2hs[DefaultInfo].files_to_run,
         ),
     ]
 

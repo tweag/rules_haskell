@@ -98,7 +98,7 @@ def _haskell_doctest_single(target, ctx):
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
     )
-    args.add_all(ghc_cc_program_args(hs, cc.tools.cc, cc.tools.ld))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc.executable.path, cc.tools.ld))
 
     doctest_log = ctx.actions.declare_file(
         "doctest-log-" + ctx.label.name + "-" + target.label.name,
@@ -137,7 +137,6 @@ def _haskell_doctest_single(target, ctx):
             depset(get_ghci_library_files(hs, cc_libraries_info, cc.transitive_libraries)),
             depset(
                 toolchain.doctest +
-                cc.files +
                 [hs.tools.ghc],
             ),
         ]),
@@ -173,6 +172,7 @@ def _haskell_doctest_single(target, ctx):
             # sandboxing altogether for doctest tests.
             "no-sandbox": "1",
         },
+        tools = [cc.tools.cc.as_tool],
     )
     return doctest_log
 
