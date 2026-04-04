@@ -50,6 +50,7 @@ subprocess.run([ghc_location] + sys.argv[1:], check=True)
         executable = runghc_wrapper_file,
         runfiles = ctx.runfiles(
             files = [runghc_wrapper_file, hs_toolchain.tools.runghc, hs_toolchain.cc_wrapper.executable],
+            transitive_files = hs_toolchain.cc_wrapper.runfiles.files,
         ),
     )]
 
