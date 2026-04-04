@@ -1,5 +1,6 @@
 """Action processing hsc files"""
 
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(":private/path_utils.bzl", "declare_compiled")
@@ -51,14 +52,16 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
 
     args.add_all(hsc_flags)
 
+    env = dicts.add(hs.env, cc.env)
     # Add an empty PATH variable if not already specified in hs.env.
     # Needed to avoid a "Couldn't read PATH" error on Windows.
     #
     # On Unix platforms, though, we mustn't set PATH as it is automatically set up
     # by the run action, unless already set in the env parameter. This triggers
     # build errors when using GHC bindists on Linux.
-    if hs.env.get("PATH") == None and hs.toolchain.is_windows:
-        hs.env["PATH"] = ""
+    if env.get("PATH") == None and hs.toolchain.is_windows:
+        env["PATH"] = ""
+
 
     hs.actions.run_shell(
         inputs = depset(transitive = [
@@ -87,7 +90,7 @@ def process_hsc_file(hs, cc, hsc_flags, hsc_inputs, hsc_file):
                 hsc2hs = hs.tools.hsc2hs.path,
             ),
         arguments = [args],
-        env = hs.env,
+        env = env,
         tools = [cc.tools.cc.as_tool],
     )
 
