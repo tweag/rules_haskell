@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
@@ -320,6 +321,8 @@ def _build_haskell_module(
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
+    env = dicts.add(hs.env, cc.env)
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -352,7 +355,7 @@ def _build_haskell_module(
         outputs = outputs,
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
-        env = hs.env,
+        env = env,
         arguments = args,
         interface_inputs = interface_inputs,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
