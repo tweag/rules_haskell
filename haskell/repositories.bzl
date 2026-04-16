@@ -79,9 +79,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_shell",
-        sha256 = "e6b87c89bd0b27039e3af2c5da01147452f240f75d505f5b6880874f31036307",
-        strip_prefix = "rules_shell-0.6.1",
-        url = "https://github.com/bazelbuild/rules_shell/releases/download/v0.6.1/rules_shell-v0.6.1.tar.gz",
+        sha256 = "20721f63908879c083f94869e618ea8d4ff5edb91ff9a72a2ebee357fdbc352d",
+        strip_prefix = "rules_shell-0.8.0",
+        url = "https://github.com/bazelbuild/rules_shell/releases/download/v0.8.0/rules_shell-v0.8.0.tar.gz",
     )
 
     if "io_tweag_rules_nixpkgs" not in native.existing_rules():
