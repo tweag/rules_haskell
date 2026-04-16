@@ -11,8 +11,10 @@ haskell_test(
         "Main.hs",
         "TH.hs",
     ],
-    deps = [
-        "//tests/data:ourclibrary",
+    deps = select({
+        "@platforms//os:macos": ["//tests/data:ourclibrary-shared"],
+        "//conditions:default": ["//tests/data:ourclibrary"],
+    }) + [
         "//tests/hackage:base",
         "//tests/hackage:template-haskell",
     ],

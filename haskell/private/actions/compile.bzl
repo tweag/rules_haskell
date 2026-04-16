@@ -288,7 +288,7 @@ def _compilation_defaults(
 
     # Transitive library dependencies for runtime.
     link_libraries(
-        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries, for_th_only = True),
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries_direct, for_th_only = True),
         args,
     )
 

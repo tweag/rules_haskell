@@ -114,7 +114,7 @@ def _haskell_doctest_single(target, ctx):
 
     # C library dependencies to link against.
     link_libraries(
-        get_ghci_library_files(hs, cc_libraries_info, cc.cc_libraries),
+        get_ghci_library_files(hs, cc_libraries_info, cc.cc_libraries_direct),
         args,
         prefix_optl = hs.toolchain.is_darwin,
     )
