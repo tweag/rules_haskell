@@ -97,7 +97,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_bazel_integration_test",
-    version = "0.27.0",
+    version = "0.37.1",
     dev_dependency = True,
 )
 bazel_dep(name = "cgrindel_bazel_starlib", version = "0.21.0")
