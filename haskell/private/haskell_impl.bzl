@@ -41,7 +41,6 @@ load(
     "parse_pattern",
 )
 load(":private/pkg_id.bzl", "pkg_id")
-load(":private/plugins.bzl", "resolve_plugin_tools")
 load(":private/set.bzl", "set")
 load(":private/version_macros.bzl", "generate_version_macros")
 load(
@@ -141,18 +140,8 @@ def _condition_coverage_src(hs, src):
 
     return conditioned_src
 
-def _resolve_preprocessors(ctx, preprocessors):
-    if not hasattr(ctx, "resolve_tools"):
-        # No resolve_tools when ctx is faked (see protobuf.bzl).
-        return struct(
-            inputs = depset(),
-            input_manifests = [],
-        )
-    (inputs, input_manifests) = ctx.resolve_tools(tools = preprocessors)
-    return struct(
-        inputs = inputs,
-        input_manifests = input_manifests,
-    )
+def _resolve_preprocessors(preprocessors):
+    return [tool[DefaultInfo].files_to_run for tool in preprocessors]
 
 def haskell_module_from_target(m):
     """ Produces the module name from a HaskellModuleInfo """
@@ -234,9 +223,11 @@ def _haskell_binary_common_impl(ctx, is_test):
         objects_dir,
     )
 
-    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
-    non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in non_default_plugin_decl]
-    preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
+    plugin_infos = [plugin[GhcPluginInfo] for plugin in plugin_decl]
+    plugin_tools = [tool[DefaultInfo].files_to_run for i in plugin_infos for tool in i.tools]
+    non_default_plugin_infos = [plugin[GhcPluginInfo] for plugin in non_default_plugin_decl]
+    non_default_plugin_tools = [tool[DefaultInfo].files_to_run for i in non_default_plugin_infos for tool in i.tools]
+    preprocessors = _resolve_preprocessors(ctx.attr.tools)
     user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_binary(
         hs,
@@ -258,8 +249,10 @@ def _haskell_binary_common_impl(ctx, is_test):
         version = ctx.attr.version,
         inspect_coverage = inspect_coverage,
         extra_ldflags_file = extra_ldflags_file,
-        plugins = plugins,
-        non_default_plugins = non_default_plugins,
+        plugin_infos = plugin_infos,
+        plugin_tools = plugin_tools,
+        non_default_plugin_infos = non_default_plugin_infos,
+        non_default_plugin_tools = non_default_plugin_tools,
         preprocessors = preprocessors,
     )
 
@@ -466,9 +459,11 @@ def haskell_library_impl(ctx):
         objects_dir,
     )
 
-    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.plugins]
-    non_default_plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in ctx.attr.non_default_plugins]
-    preprocessors = _resolve_preprocessors(ctx, ctx.attr.tools)
+    plugin_infos = [plugin[GhcPluginInfo] for plugin in ctx.attr.plugins]
+    plugin_tools = [tool[DefaultInfo].files_to_run for i in plugin_infos for tool in i.tools]
+    non_default_plugin_infos = [plugin[GhcPluginInfo] for plugin in ctx.attr.non_default_plugins]
+    non_default_plugin_tools = [tool[DefaultInfo].files_to_run for i in non_default_plugin_infos for tool in i.tools]
+    preprocessors = _resolve_preprocessors(ctx.attr.tools)
     user_compile_flags = haskell_library_expand_make_variables("ghcopts", ctx, ctx.attr.ghcopts)
     c = hs.toolchain.actions.compile_library(
         hs,
@@ -488,8 +483,10 @@ def haskell_library_impl(ctx):
         objects_dir = objects_dir,
         my_pkg_id = my_pkg_id,
         extra_ldflags_file = extra_ldflags_file,
-        plugins = plugins,
-        non_default_plugins = non_default_plugins,
+        plugin_infos = plugin_infos,
+        plugin_tools = plugin_tools,
+        non_default_plugin_infos = non_default_plugin_infos,
+        non_default_plugin_tools = non_default_plugin_tools,
         preprocessors = preprocessors,
     )
 
