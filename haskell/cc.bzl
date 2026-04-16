@@ -32,6 +32,7 @@ CcInteropInfo = provider(
         "include_args": "Extra include dirs",
         "cc_libraries_info": "HaskellCcLibrariesInfo",
         "cc_libraries": "depset, C libraries from direct linking dependencies.",
+        "cc_libraries_for_ghci": "depset, C libraries needed for GHCi/TH, including cc_shared_library.",
         "transitive_libraries": "depset, C and Haskell libraries from transitive linking dependencies.",
         "plugin_libraries": "depset, C and Haskell libraries from transitive plugin dependencies.",
         "setup_libraries": "depset, C and Haskell libraries from Cabal setup dependencies.",
@@ -161,9 +162,12 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
     plugin_libraries = _transitive_libraries_from_attr(ctx, "plugins")
     setup_libraries = _transitive_libraries_from_attr(ctx, "setup_deps")
 
-    # Collect direct libraries from both CcInfo and CcSharedLibraryInfo
-    direct_libraries = [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]
-    direct_libraries.extend([lib for info in cc_shared_libraries for lib in info.linker_input.libraries])
+    # Collect direct libraries from CcInfo only (for package registration)
+    direct_libraries_from_cc_info = [lib for li in cc_common.merge_cc_infos(cc_infos = ccs).linking_context.linker_inputs.to_list() for lib in li.libraries]
+    
+    # For GHCi/TH, also include libraries from CcSharedLibraryInfo
+    direct_libraries_for_ghci = list(direct_libraries_from_cc_info)
+    direct_libraries_for_ghci.extend([lib for info in cc_shared_libraries for lib in info.linker_input.libraries])
 
     return CcInteropInfo(
         tools = struct(**tools),
@@ -179,7 +183,8 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         # https://github.com/bazelbuild/bazel/issues/4571.
         linker_flags = linker_flags,
         cc_libraries_info = cc_libraries_info,
-        cc_libraries = get_cc_libraries(cc_libraries_info, direct_libraries),
+        cc_libraries = get_cc_libraries(cc_libraries_info, direct_libraries_from_cc_info),
+        cc_libraries_for_ghci = get_cc_libraries(cc_libraries_info, direct_libraries_for_ghci),
         transitive_libraries = transitive_libraries,
         plugin_libraries = plugin_libraries,
         setup_libraries = setup_libraries,
