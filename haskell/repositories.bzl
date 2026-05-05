@@ -176,9 +176,9 @@ def rules_haskell_dependencies():
         http_archive,
         name = "zlib",
         build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-        sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
-        strip_prefix = "zlib-1.3.1",
-        urls = ["https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz"],
+        sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+        strip_prefix = "zlib-1.3.2",
+        urls = ["https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz"],
     )
     maybe(
         http_archive,
