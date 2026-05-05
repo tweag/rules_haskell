@@ -56,7 +56,7 @@ def build_haskell_runghc(
             args.append("-i{0}".format(idir))
 
     link_libraries(
-        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries),
+        get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries_direct),
         args,
     )
 

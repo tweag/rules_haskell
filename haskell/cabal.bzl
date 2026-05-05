@@ -213,7 +213,7 @@ def _prepare_cabal_inputs(
     # already covered by their corresponding package-db entries. We only need
     # to add libraries and headers for direct C library dependencies to the
     # command line.
-    direct_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries)
+    direct_libs = get_ghci_library_files(hs, cc.cc_libraries_info, cc.cc_libraries_direct)
 
     # The regular Haskell rules perform mostly static linking, i.e. where
     # possible all C library dependencies are linked statically. Cabal has no
