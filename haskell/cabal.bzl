@@ -125,17 +125,6 @@ main = defaultMain
         )
     return setup
 
-_CABAL_TOOLS = ["alex", "c2hs", "cpphs", "doctest", "happy"]
-
-def _cabal_tool_flag(tool):
-    """Return a --with-PROG=PATH flag if input is a recognized Cabal tool. None otherwise."""
-    if tool.basename in _CABAL_TOOLS:
-        return "--with-{}={}".format(tool.basename, tool.path)
-    return None
-
-def _binary_paths(binaries):
-    return [binary.dirname for binary in binaries.to_list()]
-
 def _concat(sequences):
     return [item for sequence in sequences for item in sequence]
 
@@ -161,7 +150,7 @@ def _cabal_toolchain_info(hs, cc, workspace_name, runghc):
         hsc2hs = hs.tools.hsc2hs.path,
         runghc = runghc.path,
         ar = ar,
-        cc = cc.tools.cc,
+        cc = cc.tools.cc.executable.path,
         ld = cc.tools.ld,
         strip = cc.tools.strip,
         is_windows = hs.toolchain.is_windows,
@@ -179,8 +168,6 @@ def _prepare_cabal_inputs(
         direct_cc_info,
         component,
         package_id,
-        tool_inputs,
-        tool_input_manifests,
         cabal,
         setup,
         setup_deps,
@@ -252,7 +239,7 @@ def _prepare_cabal_inputs(
     env = dicts.add(hs.env, cc.env)
     env["PATH"] = join_path_list(
         hs.toolchain.is_windows,
-        _binary_paths(tool_inputs) + posix.paths + hs.tools_config.path_for_cabal,
+        posix.paths + hs.tools_config.path_for_cabal,
     )
     if hs.toolchain.is_darwin:
         env["SDKROOT"] = "macosx"  # See haskell/private/actions/link.bzl
@@ -348,7 +335,6 @@ def _prepare_cabal_inputs(
     extra_ldflags_file = darwin_flags_for_linking_indirect_cc_deps(hs, cc, posix, hs.name, dynamic = True)
 
     # Redundant with _binary_paths() above, but better be explicit when we can.
-    path_args.extend([_cabal_tool_flag(tool_flag) for tool_flag in tool_inputs.to_list() if _cabal_tool_flag(tool_flag)])
 
     repo_name = "_main"
     if generate_paths_module and label and label.repo_name:
@@ -389,7 +375,6 @@ def _prepare_cabal_inputs(
         input_files,
         transitive = [
             depset(srcs),
-            depset(cc.files),
             depset(ghc_files),
             package_databases,
             setup_dep_info.package_databases,
@@ -402,18 +387,14 @@ def _prepare_cabal_inputs(
             setup_dep_info.hs_libraries,
             dep_info.interface_dirs,
             dep_info.hs_libraries,
-            tool_inputs,
         ],
     )
-    input_manifests = tool_input_manifests + hs.toolchain.cc_wrapper.manifests
-
     runfiles_direct = runfiles_libs if static_binary else dynamic_libs
 
     return struct(
         cabal_wrapper = cabal_wrapper,
         args = args,
         inputs = inputs,
-        input_manifests = input_manifests,
         env = env,
         runfiles = depset(direct = runfiles_direct),
     )
@@ -575,7 +556,7 @@ def _haskell_cabal_library_impl(ctx):
                 ),
                 sibling = cabal,
             )
-    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
+    attr_tools = [tool[DefaultInfo].files_to_run for tool in ctx.attr.tools]
     c = _prepare_cabal_inputs(
         hs,
         cc,
@@ -586,8 +567,6 @@ def _haskell_cabal_library_impl(ctx):
         direct_cc_info,
         component = "lib:{}".format(ctx.attr.sublibrary_name or ctx.attr.package_name or hs.label.name),
         package_id = package_id,
-        tool_inputs = tool_inputs,
-        tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
         setup_deps = setup_deps,
@@ -620,15 +599,23 @@ def _haskell_cabal_library_impl(ctx):
     if with_profiling:
         outputs.append(profiling_library)
 
-    (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
     ctx.actions.write(json_args, json.encode(c.args))
+
+    # Ensure that dependent tools can be found.
+    paths = []
+    if "PATH" in c.env:
+        paths.append(c.env["PATH"])
+    paths.extend([t.executable.dirname for t in attr_tools])
+    c.env["PATH"] = ":".join(paths)
+
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [json_args.path],
         inputs = depset([json_args], transitive = [c.inputs]),
-        input_manifests = c.input_manifests + runghc_manifest,
-        tools = [c.cabal_wrapper, ctx.executable._runghc] + hs.tools_config.tools_for_ghc,
+        tools = attr_tools +
+                [c.cabal_wrapper, ctx.executable._runghc, hs.toolchain.cc_wrapper.as_tool] +
+                hs.tools_config.tools_for_ghc,
         outputs = outputs,
         env = c.env,
         mnemonic = "HaskellCabalLibrary",
@@ -911,7 +898,7 @@ def _haskell_cabal_binary_impl(ctx):
         "_install/{}_data".format(hs.label.name),
         sibling = cabal,
     )
-    (tool_inputs, tool_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools)
+    attr_tools = [tool[DefaultInfo].files_to_run for tool in ctx.attr.tools]
     c = _prepare_cabal_inputs(
         hs,
         cc,
@@ -922,8 +909,6 @@ def _haskell_cabal_binary_impl(ctx):
         direct_cc_info,
         component = "exe:{}".format(exe_name),
         package_id = hs.label.name,
-        tool_inputs = tool_inputs,
-        tool_input_manifests = tool_input_manifests,
         cabal = cabal,
         setup = setup,
         setup_deps = setup_deps,
@@ -942,20 +927,20 @@ def _haskell_cabal_binary_impl(ctx):
         static_binary = static_binary,
         label = ctx.label,
     )
-    (_, runghc_manifest) = ctx.resolve_tools(tools = [ctx.attr._runghc])
     json_args = ctx.actions.declare_file("{}_cabal_wrapper_args.json".format(ctx.label.name))
     ctx.actions.write(json_args, json.encode(c.args))
     ctx.actions.run(
         executable = c.cabal_wrapper,
         arguments = [json_args.path],
         inputs = depset([json_args], transitive = [c.inputs]),
-        input_manifests = c.input_manifests + runghc_manifest,
         outputs = [
             package_database,
             binary,
             data_dir,
         ],
-        tools = [c.cabal_wrapper, ctx.executable._runghc] + hs.tools_config.tools_for_ghc,
+        tools = attr_tools +
+                [c.cabal_wrapper, ctx.executable._runghc, hs.toolchain.cc_wrapper.as_tool] +
+                hs.tools_config.tools_for_ghc,
         env = c.env,
         mnemonic = "HaskellCabalBinary",
         progress_message = "HaskellCabalBinary {}".format(hs.label),

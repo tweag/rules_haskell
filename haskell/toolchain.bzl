@@ -62,26 +62,27 @@ def _run_ghc(
         interface_inputs = [],
         extra_name = "",
         hi_file = None,
-        abi_file = None):
+        abi_file = None,
+        extra_tools = []):
     args = hs.actions.args()
     extra_inputs = []
 
     # Detect persistent worker support
     flagsfile_prefix = ""
     execution_requirements = {}
-    tools = []
+    tools = extra_tools + [cc.tools.cc.as_tool]
     if hs.worker != None:
         flagsfile_prefix = "@"
         execution_requirements = {"supports-workers": "1"}
         args.add(hs.worker.path)
-        tools = [hs.worker]
+        tools = extra_tools + [hs.worker]
     else:
         args.add(hs.tools.ghc)
         extra_inputs.append(hs.tools.ghc)
 
     # XXX: We should also tether Bazel's CC toolchain to GHC's, so that we can properly mix Bazel-compiled
     # C libraries with Haskell targets.
-    args.add_all(ghc_cc_program_args(hs, cc.tools.cc, cc.tools.ld))
+    args.add_all(ghc_cc_program_args(hs, cc.tools.cc.executable.path, cc.tools.ld))
 
     compile_flags_file = hs.actions.declare_file("compile_flags_%s_%s_%s" % (hs.name, extra_name, mnemonic))
     extra_args_file = hs.actions.declare_file("extra_args_%s_%s_%s" % (hs.name, extra_name, mnemonic))
@@ -129,7 +130,7 @@ def _run_ghc(
     extra_inputs += [
         compile_flags_file,
         extra_args_file,
-    ] + cc.files + hs.toolchain.bindir + hs.toolchain.libdir
+    ] + hs.toolchain.bindir + hs.toolchain.libdir
 
     if hs.toolchain.locale_archive != None:
         extra_inputs.append(hs.toolchain.locale_archive)
@@ -140,11 +141,6 @@ def _run_ghc(
         extra_inputs.append(flagsfile)
 
     inputs = depset(extra_inputs, transitive = [inputs])
-
-    if input_manifests != None:
-        input_manifests = input_manifests + cc.manifests
-    else:
-        input_manifests = cc.manifests
 
     tools.extend(hs.tools_config.tools_for_ghc)
     append_to_path(env, hs.toolchain.is_windows, hs.tools_config.path_for_run_ghc)
@@ -426,11 +422,8 @@ def _haskell_toolchain_impl(ctx):
         for lib in ctx.attr.libraries
     }
 
-    (cc_wrapper_inputs, cc_wrapper_manifest) = ctx.resolve_tools(tools = [ctx.attr._cc_wrapper])
     cc_wrapper_info = ctx.attr._cc_wrapper[DefaultInfo]
-    cc_wrapper_runfiles = cc_wrapper_info.default_runfiles.merge(
-        cc_wrapper_info.data_runfiles,
-    )
+    cc_wrapper_files_to_run = cc_wrapper_info.files_to_run
 
     if ctx.attr.asterius_binaries:
         tools_config = asterius_tools_config(
@@ -449,8 +442,6 @@ def _haskell_toolchain_impl(ctx):
             supports_haddock = default_tools_config.supports_haddock,
         )
 
-    (protoc_inputs, protoc_input_manifests) = ctx.resolve_tools(tools = [ctx.attr._protoc])
-
     return [
         platform_common.ToolchainInfo(
             name = ctx.label.name,
@@ -467,10 +458,9 @@ def _haskell_toolchain_impl(ctx):
             locale = ctx.attr.locale,
             locale_archive = locale_archive,
             cc_wrapper = struct(
-                executable = ctx.executable._cc_wrapper,
-                inputs = cc_wrapper_inputs,
-                manifests = cc_wrapper_manifest,
-                runfiles = cc_wrapper_runfiles,
+                executable = cc_wrapper_files_to_run.executable,
+                as_tool = cc_wrapper_files_to_run,
+                runfiles = cc_wrapper_info.default_runfiles,
             ),
             mode = ctx.var["COMPILATION_MODE"],
             actions = struct(
@@ -491,11 +481,7 @@ def _haskell_toolchain_impl(ctx):
             version = ctx.attr.version,
             numeric_version = numeric_version,
             global_pkg_db = pkgdb_file,
-            protoc = struct(
-                executable = ctx.executable._protoc,
-                inputs = protoc_inputs,
-                input_manifests = protoc_input_manifests,
-            ),
+            protoc = ctx.attr._protoc[DefaultInfo].files_to_run,
             rule_info_proto = ctx.attr._rule_info_proto,
             tools_config = tools_config,
         ),
