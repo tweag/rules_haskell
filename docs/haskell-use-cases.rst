@@ -948,7 +948,7 @@ building fully-statically-linked binaries. Often this will require you to
 customise a GHC derivation in your Nix package set. If you are unfamiliar with
 Nix, one way to add such a custom package to an existing set is with an
 *overlay*.  Detailed documentation on overlays is available at
-https://nixos.wiki/wiki/Overlays, but for the purposes of this documentation,
+https://wiki.nixos.org/wiki/Overlays, but for the purposes of this documentation,
 it's enough to know that overlays are essentially functions which accept package
 sets (conventionally called ``super``) and produce new package sets. We can
 write an overlay that modifies the ``ghc`` derivation in its argument to add
