@@ -6,7 +6,9 @@ Common Haskell Build Use Cases
 Starting a new project
 ----------------------
 
-The fastest way to start a new project is::
+The fastest way to start a new project is
+
+.. code-block:: console
 
   $ curl https://haskell.build/start | sh
 
@@ -19,7 +21,9 @@ Making rules_haskell available
 ------------------------------
 
 First of all, the ``WORKSPACE`` file must specify how to obtain
-rules_haskell. To use a released version, do the following::
+rules_haskell. To use a released version, do the following:
+
+.. code-block:: python
 
   load(
       "@bazel_tools//tools/build_defs/repo:http.bzl",
@@ -46,7 +50,9 @@ official binary distributions from `haskell.org`_. This is done using
 the `ghc_bindist`_ rule. You don't normally need to call this rule
 directly. You can instead call the following macro, which exposes all
 binary distributions for all platforms (Bazel will select one during
-toolchain resolution based on the target platform)::
+toolchain resolution based on the target platform)
+
+.. code-block:: python
 
   load(
       "@rules_haskell//haskell:toolchain.bzl",
@@ -70,7 +76,9 @@ The compiler can also be pulled from Nixpkgs_, a set of package
 definitions for the `Nix package manager`_. Pulling the compiler from
 Nixpkgs makes the build more hermetic, because the transitive closure
 of the compiler and all its dependencies is precisely defined in the
-``WORKSPACE`` file::
+``WORKSPACE`` file:
+
+.. code-block:: python
 
   load(
       "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
@@ -102,7 +110,9 @@ You can register as many toolchains as you like. Nixpkgs toolchains do
 not conflict with binary distributions. For Bazel to select the
 Nixpkgs toolchain during `toolchain resolution`_, set the platform
 accordingly. For example, you can have the following in your
-``.bazelrc`` file at the root of your project::
+``.bazelrc`` file at the root of your project
+
+.. code-block:: bash
 
   build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
 
@@ -134,7 +144,9 @@ optional executable output that can be run to drop you into an
 interactive session. If the target's name is ``foo``, then the REPL
 output is called ``foo@repl``.
 
-Consider the following binary target::
+Consider the following binary target:
+
+.. code-block:: python
 
   haskell_binary(
       name = "hello",
@@ -143,7 +155,9 @@ Consider the following binary target::
   )
 
 The target above also implicitly defines ``hello@repl``. You can call
-the REPL like this (requires Bazel 0.15 or later)::
+the REPL like this (requires Bazel 0.15 or later):
+
+.. code-block:: console
 
   $ bazel run //:hello@repl
 
@@ -160,7 +174,9 @@ Server Protocol. To set this up you can define a `haskell_repl`_ target that
 will collect the required compiler flags for your Haskell targets and pass them
 to `hie-bios`_ which will then forward them to ghcide.
 
-Let's set this up for the following example project::
+Let's set this up for the following example project:
+
+.. code-block:: python
 
   haskell_toolchain_library(
       name = "base",
@@ -189,7 +205,9 @@ Let's set this up for the following example project::
   )
 
 We want to configure ghcide to provide IDE integration for all these three
-targets. Start by defining a ``haskell_repl`` target as follows::
+targets. Start by defining a ``haskell_repl`` target as follows:
+
+.. code-block:: python
 
   haskell_repl(
     name = "hie-bios",
@@ -215,7 +233,9 @@ the following Bazel command:
   bazel run //:hie-bios@bios
 
 Next, we need to hook this up to `hie-bios`_ using the `bios cradle`_. To that
-end, define a small shell script named ``.hie-bios`` that looks as follows::
+end, define a small shell script named ``.hie-bios`` that looks as follows:
+
+.. code-block:: bash
 
   #!/usr/bin/env bash
   set -euo pipefail
@@ -224,7 +244,9 @@ end, define a small shell script named ``.hie-bios`` that looks as follows::
   echo -Wwarn >>"$HIE_BIOS_OUTPUT"
 
 Then configure `hie-bios`_ to use this script in the bios cradle with the
-following ``hie.yaml`` file::
+following ``hie.yaml`` file:
+
+.. code-block:: yaml
 
   cradle:
     bios:
@@ -239,7 +261,10 @@ First, define a custom stack snapshot that provides the package versions that
 ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
 ``ghcide-stack-snapshot.yaml``. Copy the ``resolver`` field and turn the
 ``extra-deps`` field into a ``packages`` field. Then add another entry to
-``packages`` for the ghcide library itself::
+``packages`` for the ghcide library itself:
+
+
+.. code-block:: yaml
 
   # Taken from ghcide's stack.yaml
   resolver: nightly-2019-09-21
@@ -265,7 +290,9 @@ ghcide requires based on `ghcide's stack.yaml`_ file. Let's call it
 
 Then define a dedicated ``stack_snapshot`` for ghcide in your ``WORKSPACE``
 file. The ``ghcide`` package has a library and an executable component which we
-need to declare using the ``components`` attribute::
+need to declare using the ``components`` attribute:
+
+.. code-block:: python
 
   stack_snapshot(
       name = "ghcide",
@@ -280,12 +307,16 @@ need to declare using the ``components`` attribute::
 
 This will make the ``ghcide`` executable available under the Bazel label
 ``@ghcide-exe//ghcide``. You can test if this worked by building and executing
-ghcide as follows::
+ghcide as follows:
+
+.. code-block:: console
 
   bazel build @ghcide-exe//ghcide
   bazel-bin/external/ghcide/ghcide-0.1.0/_install/bin/ghcide
 
-Write a small shell script to make it easy to invoke ghcide from your editor::
+Write a small shell script to make it easy to invoke ghcide from your editor:
+
+.. code-block:: bash
 
   #!/usr/bin/env bash
   set -euo pipefail
@@ -331,7 +362,9 @@ package versions and dependencies based on a given Stackage snapshot. It also
 downloads the packages sources and generates Bazel build definitions for the
 individual Cabal packages.
 
-This is how you import the Stackage LTS 20.3 snapshot ::
+This is how you import the Stackage LTS 20.3 snapshot
+
+.. code-block:: python
 
   stack_snapshot(
       name = "stackage",
@@ -365,7 +398,9 @@ written to a lock file. Future fetches will only read from that lock file and
 download packages in a way that is eligible for Bazel repository caching.
 
 1. Generate a lock file by running ``bazel run @stackage-unpinned//:pin``.
-2. Set the ``stack_snapshot_json`` attribute. ::
+2. Set the ``stack_snapshot_json`` attribute.
+
+.. code-block:: python
 
      stack_snapshot(
          ...
@@ -380,7 +415,9 @@ Version overrides or Hackage dependencies
 
 You can also depend on Hackage packages that are not part of a Stackage
 snapshot, or override the version of a package, by specifying the version in
-the ``packages`` attribute. ::
+the ``packages`` attribute.
+
+.. code-block:: python
 
   stack_snapshot(
       ...
@@ -395,7 +432,9 @@ Non-Haskell dependencies
 
 Some Hackage packages depend on C libraries. Bazel builds should be hermetic,
 therefore, such library dependencies should be managed by Bazel and declared
-explicitly. ::
+explicitly.
+
+.. code-block:: python
 
   stack_snapshot(
       ...
@@ -410,7 +449,9 @@ explicitly. ::
 
 This declares that the Stackage package ``zlib`` has an additional dependency
 ``@zlib-deps//:libz``. The C library ``libz`` could be imported using
-``rules_nixpkgs``, or fetched and built by Bazel as follows. ::
+``rules_nixpkgs``, or fetched and built by Bazel as follows.
+
+.. code-block:: python
 
   http_archive(
       name = "zlib-deps",
@@ -439,7 +480,9 @@ You can inject a vendored or patched version of a package into the dependency
 graph generated by ``stack_snapshot``. For example, if you have a custom
 version of the ``hashable`` package in your repository under the label
 ``//third-party/hashable``, then you can inject it into a ``stack_snapshot`` as
-follows. ::
+follows.
+
+.. code-block:: python
 
   workspace(name = "workspace-name")
 
@@ -471,7 +514,9 @@ Patching packages
 ^^^^^^^^^^^^^^^^^
 
 The ``vendored_packages`` attribute can be used to inject a patched version of
-a Hackage packages, for example one with patched Cabal version bounds. ::
+a Hackage packages, for example one with patched Cabal version bounds.
+
+.. code-block:: python
 
   stack_snapshot(
       ...
@@ -534,18 +579,22 @@ detailed rationale.
 To use Nixpkgs in Bazel, we need `rules_nixpkgs`_. See `Picking
 a compiler`_ for how to import Nixpkgs rules into your workspace and
 how to use a compiler from Nixpkgs. To use Cabal packages from
-Nixpkgs, replace the compiler definition with the following::
+Nixpkgs, replace the compiler definition with the following:
+
+.. code-block:: python
 
   haskell_register_ghc_nixpkgs(
       version = "X.Y.Z", # Any GHC version
       nix_file = "//:ghc.nix",
       build_file = "@rules_haskell//haskell:ghc.BUILD",
-      repositories = { "nixpkgs": "@nixpkgs" },
+      repositories = { "nixpkgs": "@nixpkgs" }
   )
 
 This definition assumes a ``ghc.nix`` file at the root of the
 repository. In this file, you can use the Nix expression language to
-construct a compiler with all the packages you depend on in scope::
+construct a compiler with all the packages you depend on in scope:
+
+.. code-block:: nix
 
   with (import <nixpkgs> { config = {}; overlays = []; });
 
@@ -571,7 +620,9 @@ depend on every other.
 
 The user, however, can describe the dependencies between the modules,
 and avoid unnecessary recompilation by using the ``haskell_module``
-rule.::
+rule.:
+
+.. code-block:: python
 
   load("@rules_haskell//haskell:defs.bzl", "haskell_library")
   load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
@@ -623,7 +674,9 @@ other libraries are dependencies of the module if they appear listed
 in the ``deps`` attribute of the enclosing library (that would be
 ``:lib`` in our example). Finally, the ``haskell_module`` rule can also
 depend on specific modules from other libraries via the
-``cross_library_deps`` attribute.::
+``cross_library_deps`` attribute.
+
+.. code-block:: python
 
   haskell_module(
       name = "Lib2Mod1",
@@ -659,7 +712,9 @@ depend on specific modules from other libraries via the
 coming from the same library (like ``:LibMod1``). The alternative would be
 to add ``:lib`` to the ``deps`` attribute of ``:lib2``, but this would
 cause builds of ``:Lib2Mod1`` and ``:Lib2Mod2`` to depend on all of the
-modules of ``:lib``, as in the following snippet.::
+modules of ``:lib``, as in the following snippet.
+
+.. code-block:: python
 
   haskell_module(
       name = "Lib2Mod1",
@@ -711,7 +766,9 @@ Linting your code
 -----------------
 
 There is currently no dedicated rule for linting Haskell code. You can
-apply warning flags using the ``compiler_flags`` attribute, for example ::
+apply warning flags using the ``compiler_flags`` attribute, for example
+
+.. code-block:: python
 
   haskell_library(
       ...
@@ -728,7 +785,9 @@ apply warning flags using the ``compiler_flags`` attribute, for example ::
   )
 
 For larger projects it can make sense to define a custom macro that
-applies such common flags by default. ::
+applies such common flags by default.
+
+.. code-block:: python
 
   common_ghcopts = [ ... ]
 
@@ -784,7 +843,9 @@ These pre-processors can be specfied in compiler flags on the
 command-line or in pragmas in the source files. For example,
 `hspec-discover`_ is a pre-processor. To use it, it must be
 a `tools` dependency. You can then use a CPP macro to avoid hardcoding
-the location of the tool in source code pragmas. Example: ::
+the location of the tool in source code pragmas. Example:
+
+.. code-block:: python
 
   haskell_test(
       name = "tests",
@@ -794,7 +855,9 @@ the location of the tool in source code pragmas. Example: ::
       deps = ["@stackage//:base"],
   )
 
-Where ``Spec.hs`` reads: ::
+Where ``Spec.hs`` reads:
+
+.. code-block:: haskell
 
   {-# LANGUAGE CPP #-}
   {-# OPTIONS_GHC -F -pgmF HSPEC_DISCOVER #-}
@@ -825,7 +888,9 @@ or fails, add ``--test_output=all`` as a flag when invoking the test, and there
 will be a report in the test output. You will only see the report if you
 required a certain level of expression coverage in the rule attributes.
 
-For example, your BUILD file might look like this: ::
+For example, your BUILD file might look like this:
+
+.. code-block:: python
 
   haskell_library(
     name = "lib",
@@ -847,13 +912,15 @@ For example, your BUILD file might look like this: ::
   )
 
 And if you ran ``bazel coverage //somepackage:test --test_output=all``, you
-might see a result like this: ::
+might see a result like this:
+
+.. code-block:: console
 
   INFO: From Testing //somepackage:test:
   ==================== Test output for //somepackage:test:
   Overall report
   100% expressions used (9/9)
-  100% boolean coverage (0/0)
+  100% boolean coverage (0/0)``
       100% guards (0/0)
       100% 'if' conditions (0/0)
       100% qualifiers (0/0)
@@ -906,7 +973,9 @@ may improve compilation times. We implemented a worker for GHC using GHC API.
 .. _persistent worker mode: https://blog.bazel.build/2015/12/10/java-workers.html
 
 To activate the persistent worker mode in ``rules_haskell`` the user adds a couple of lines
-in the ``WORKSPACE`` file to load worker's dependencies: ::
+in the ``WORKSPACE`` file to load worker's dependencies:
+
+.. code-block:: python
 
   load("//tools:repositories.bzl", "rules_haskell_worker_dependencies")
   rules_haskell_worker_dependencies()
@@ -928,7 +997,9 @@ fully-statically-linked binaries can be larger than dynamically-linked binaries,
 due to the fact that all symbols must be bundled into a single output.
 ``rules_haskell`` has support for building fully-statically-linked binaries
 using Nix-provisioned GHC toolchains and the ``static_runtime`` and
-``fully_static_link`` attributes of the ``haskell_register_ghc_nixpkgs`` macro::
+``fully_static_link`` attributes of the ``haskell_register_ghc_nixpkgs`` macro
+
+.. code-block:: python
 
   load(
       "@rules_haskell//haskell:nixpkgs.bzl",
@@ -952,7 +1023,9 @@ https://wiki.nixos.org/wiki/Overlays, but for the purposes of this documentation
 it's enough to know that overlays are essentially functions which accept package
 sets (conventionally called ``super``) and produce new package sets. We can
 write an overlay that modifies the ``ghc`` derivation in its argument to add
-flags that allow it to produce fully-statically-linked binaries as follows::
+flags that allow it to produce fully-statically-linked binaries as follows:
+
+.. code-block:: nix
 
   let
     # Pick a version of Nixpkgs that we will base our package set on (apply an
@@ -1001,7 +1074,11 @@ executables.
 You may wish to base your GHC derivation on one which uses Musl, a C library
 designed for static linking (unlike glibc, which can cause issues when linked
 statically). `static-haskell-nix`_ is an example of a project which provides
-such a GHC derivation and can be used like so::
+such a GHC derivation and can be used like so:
+
+
+
+.. code-block:: nix
 
   let
     baseCommit = "..."; # Pick a Nixpkgs version to pin to.
@@ -1051,7 +1128,9 @@ such a GHC derivation and can be used like so::
 If you adopt a Musl-based GHC you should also take care to ensure that the C
 toolchain used by ``rules_haskell`` also uses Musl; you can do this using the
 ``nixpkgs_cc_configure`` rule from ``rules_nixpkgs`` and providing a Nix
-expression that supplies appropriate ``cc`` and ``binutils`` derivations::
+expression that supplies appropriate ``cc`` and ``binutils`` derivations
+
+.. code-block:: python
 
   nixpkgs_cc_configure(
       repository = "@nixpkgs",
@@ -1068,7 +1147,9 @@ expression that supplies appropriate ``cc`` and ``binutils`` derivations::
   )
 
 With the toolchain taken care of, you can then create fully-statically-linked
-binaries by enabling the ``fully_static_link`` feature flag, e.g. in ``haskell_binary``::
+binaries by enabling the ``fully_static_link`` feature flag, e.g. in ``haskell_binary``
+
+.. code-block:: python
 
   haskell_binary(
       name = ...,
@@ -1099,7 +1180,9 @@ required to run a typical Haskell binary. Thereafter, we can use ``rules_oci`` t
 a base image upon which we can layer a Bazel built Haskell binary.
 
 Step one is to ensure you have all the necessary ``rules_oci`` paraphernalia loaded in your ``WORKSPACE``
-file: ::
+file:
+
+.. code-block:: python
 
   http_archive(
       name = "rules_oci",
@@ -1119,7 +1202,9 @@ file: ::
       crane_version = LATEST_CRANE_VERSION,
   )
 
-Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_oci`` to layer its products on top of ::
+Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nixpkgs_package`` rule for ``rules_oci`` to layer its products on top of
+
+.. code-block:: python
 
   nixpkgs_package(
       name = "haskell-base-image",
@@ -1132,7 +1217,9 @@ Then we're ready to specify a base image built using the ``rules_nixpkgs`` ``nix
       """,
   )
 
-Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as follows ::
+Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as follows
+
+.. code-block:: nix
 
   # nixpkgs is provisioned by rules_nixpkgs for us which we set to be ./default.nix
   with import <nixpkgs> { system = "x86_64-linux"; };
@@ -1155,7 +1242,9 @@ Step two requires that we specify our nixpkgs/haskellBaseImageDocker.nix file as
     gunzip -c ${haskellBase} > $out/image
   ''
 
-Step three pulls all this together in a build file to actually assemble our final container image. In a BUILD.bazel file, we'll need the following ::
+Step three pulls all this together in a build file to actually assemble our final container image. In a BUILD.bazel file, we'll need the following
+
+.. code-block:: python
 
   load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push")
   load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
@@ -1188,7 +1277,9 @@ Step three pulls all this together in a build file to actually assemble our fina
       entrypoint = ["/my_binary"],
   )
 
-And you may want to use ``rules_oci`` to push your container image as follows ::
+And you may want to use ``rules_oci`` to push your container image as follows
+
+.. code-block:: python
 
   oci_push(
       name = "my_binary_push",
@@ -1229,7 +1320,9 @@ configuration can be avoided by telling Nix to fetch it from the
 .. _haskell.nix binary cache: https://input-output-hk.github.io/haskell.nix/tutorials/getting-started.html#setting-up-the-binary-cache
 
 To tell ``rules_haskell`` about the cross-compiler, we can register it
-in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE>`_. ::
+in the `WORKSPACE file <https://github.com/tweag/rules_haskell/blob/master/examples/arm/WORKSPACE>`_.
+
+.. code-block:: python
 
   load(
       "@rules_haskell//haskell:nixpkgs.bzl",
@@ -1262,7 +1355,9 @@ and cross-compilation with Bazel can be found `here <https://docs.bazel.build/ve
 
 When using rules that depend on Cabal, ``rules_haskell`` also
 needs a compiler targeting the execution platform, so the ``Setup.hs``
-scripts can be executed. ::
+scripts can be executed.
+
+.. code-block:: python
 
   haskell_register_ghc_nixpkgs(
       name = "x86",
@@ -1279,7 +1374,9 @@ scripts can be executed. ::
       repository = "@nixpkgs",
   )
 
-Similarly, we need to register the native and cross-toolchains for C. ::
+Similarly, we need to register the native and cross-toolchains for C.
+
+.. code-block:: python
 
   nixpkgs_cc_configure(
       name = "nixpkgs_config_cc_x86",
@@ -1311,7 +1408,9 @@ Similarly, we need to register the native and cross-toolchains for C. ::
 
 Having the toolchains registered, the last remaining bit is telling
 Bazel for which platform to build. Building for ``arm`` requires
-declaring the platform in the `BUILD <https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel>`_ file. ::
+declaring the platform in the `BUILD <https://github.com/tweag/rules_haskell/blob/master/examples/arm/BUILD.bazel>`_ file.
+
+.. code-block:: python
 
   platform(
       name = "linux_aarch64",
@@ -1321,9 +1420,11 @@ declaring the platform in the `BUILD <https://github.com/tweag/rules_haskell/blo
       ],
   )
 
-Then we can invoke ::
+Then we can invoke
 
-  bazel build --platforms=//:linux_aarch64 --incompatible_enable_cc_toolchain_resolution
+.. code-block:: console
+
+  $ bazel build --platforms=//:linux_aarch64 --incompatible_enable_cc_toolchain_resolution
 
 to create the ``arm`` artifact. The flag ``--incompatible_enable_cc_toolchain_resolution``
 is necessary to have Bazel use the platforms mechanism to select the C toolchains.

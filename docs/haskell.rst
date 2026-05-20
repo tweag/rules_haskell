@@ -35,7 +35,9 @@ On a Unix system you will need the following tools installed.
 * ``python3``
 * JDK (e.g., OpenJDK 8 or 11)
 
-On Ubuntu you can obtain them by installing the following packages. ::
+On Ubuntu you can obtain them by installing the following packages.
+
+.. code-block:: console
 
   build-essential libffi-dev libgmp-dev libtinfo6 libtinfo-dev python3 openjdk-11-jdk
 
@@ -48,12 +50,17 @@ On Windows you will need.
 - ``python3``
 
 Next, `install Bazel`_ if you don't have it installed already. Then, retrieve
-the ``rules_haskell`` GitHub repository::
+the ``rules_haskell`` GitHub repository:
+
+
+.. code-block:: console
 
   git clone https://github.com/tweag/rules_haskell/
 
 The sample project for this tutorial is in the ``tutorial``
-directory and is structured as follows::
+directory and is structured as follows:
+
+.. code-block:: text
 
   rules_haskell
   └── tutorial
@@ -65,11 +72,15 @@ directory and is structured as follows::
         ├── BUILD.bazel
         └── Bool.hs
 
-The first thing to do is to::
+The first thing to do is to:
+
+.. code-block:: console
 
   $ cd tutorial
 
-If you use the ``NixOS`` distribution, also run the following command::
+If you use the ``NixOS`` distribution, also run the following command:
+
+.. code-block:: console
 
   $ echo 'build --host_platform=@rules_nixpkgs_core//platforms:host' >> .bazelrc.local
 
@@ -127,7 +138,9 @@ libraries. Each instance of a build rule in the ``BUILD.bazel`` file is
 called a *target* and points to a specific set of source files and
 dependencies. A target can also point to other targets.
 
-Take a look at the ``BUILD.bazel`` file in the ``tutorial/lib`` directory::
+Take a look at the ``BUILD.bazel`` file in the ``tutorial/lib`` directory:
+
+.. code-block:: python
 
   haskell_library(
       name = "booleans",
@@ -148,7 +161,9 @@ target.
 Build the project
 ^^^^^^^^^^^^^^^^^
 
-Let's build your sample project. Run the following command::
+Let's build your sample project. Run the following command
+
+.. code-block:: console
 
   $ bazel build //lib:booleans
 
@@ -157,7 +172,9 @@ Notice the target label - the ``//lib:`` part is the location of our
 is what we named that target in the ``BUILD.bazel`` file. (You will learn
 about target labels in more detail at the end of this tutorial.)
 
-Bazel produces output similar to the following::
+Bazel produces output similar to the following:
+
+.. code-block:: text
 
   INFO: Found 1 target...
   Target //lib:booleans up-to-date:
@@ -179,7 +196,9 @@ project's dependency graph, which enables accurate incremental builds.
 
 Let's visualize our sample project's dependencies. First, generate
 a text representation of the dependency graph (run the command at the
-workspace root)::
+workspace root):
+
+.. code-block:: console
 
   bazel query --nohost_deps --noimplicit_deps \
     'deps(//lib:booleans)' --output graph
@@ -191,12 +210,16 @@ and format the output as a graph.
 Then, paste the text into GraphViz_.
 
 On Ubuntu, you can view the graph locally by installing GraphViz and the xdot
-Dot Viewer::
+Dot Viewer:
+
+.. code-block:: console
 
   sudo apt update && sudo apt install graphviz xdot
 
 Then you can generate and view the graph by piping the text output above
-straight to xdot::
+straight to xdot:
+
+.. code-block:: console
 
   xdot <(bazel query --nohost_deps --noimplicit_deps \
            'deps(//lib:booleans)' --output graph)
@@ -230,7 +253,9 @@ Specify multiple build targets
 Let's split our sample project build into two targets. Take a look at
 the ``BUILD.bazel`` files in the ``tutorial/lib`` and ``tutorial/main``
 directories. The contents of both files could have been kept in
-a single ``BUILD.bazel`` as follows::
+a single ``BUILD.bazel`` as follows:
+
+.. code-block:: python
 
   haskell_library(
       name = "booleans",
@@ -257,22 +282,30 @@ things. Libraries like ``base``, ``bytestring`` and others that ship
 with GHC are special in that they are prebuilt outside of Bazel. To
 import them as regular targets, we use the `haskell_toolchain_library`_ rule.
 
-Let's build this new version of our project::
+Let's build this new version of our project:
+
+.. code-block:: console
 
   $ bazel build //main:demorgan
 
-Bazel produces output similar to the following::
+Bazel produces output similar to the following:
+
+.. code-block:: text
 
   INFO: Found 1 target...
   Target //main:demorgan up-to-date:
     bazel-bin/main/demorgan
   INFO: Elapsed time: 2.728s, Critical Path: 1.23s
 
-Now test your freshly built binary::
+Now test your freshly built binary:
+
+.. code-block:: console
 
   $ bazel-bin/main/demorgan
 
-Or alternatively::
+Or alternatively:
+
+.. code-block:: console
 
   $ bazel run //main:demorgan
 
@@ -305,7 +338,9 @@ Notice that we actually have two sub-directories, and each contains
 a ``BUILD.bazel`` file. Therefore, to Bazel, the workspace contains two
 packages, ``lib`` and ``main``.
 
-Take a look at the ``lib/BUILD.bazel`` file::
+Take a look at the ``lib/BUILD.bazel`` file:
+
+.. code-block:: python
 
   haskell_library(
       name = "booleans",
@@ -313,7 +348,9 @@ Take a look at the ``lib/BUILD.bazel`` file::
       visibility = ["//main:__pkg__"],
   )
 
-And at the ``main/BUILD.bazel`` file::
+And at the ``main/BUILD.bazel`` file:
+
+.. code-block:: python
 
   haskell_toolchain_library(name = "base")
 
@@ -345,7 +382,9 @@ Use labels to reference targets
 
 In ``BUILD.bazel`` files and at the command line, Bazel uses *labels* to
 reference targets - for example, ``//main:demorgan`` or
-``//lib:booleans``. Their syntax is::
+``//lib:booleans``. Their syntax is:
+
+.. code-block:: text
 
   //path/to/package:target-name
 
