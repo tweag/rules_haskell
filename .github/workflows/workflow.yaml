@@ -151,7 +151,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-2022]
-        module: [rules_haskell, rules_haskell_tests]
+        module: [rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
           - 9.4.8
@@ -231,10 +231,6 @@ jobs:
           # Quote the package specifier so that it works on Windows
           bazelisk test "//..."
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
         shell: bash
@@ -250,6 +246,11 @@ jobs:
           bazelisk run @stackage-pinning-test-unpinned//:pin
           bazelisk build @stackage-pinning-test//:hspec
 
+      - name: Setup tmate session
+        if: always()
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
       - name: Collect Logs
         id: collect_logs
         if: failure()

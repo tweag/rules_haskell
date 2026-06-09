@@ -27,6 +27,10 @@ haskell_test(
     name = "bin-deps",
     size = "small",
     srcs = ["Bin.hs"],
+    ghcopts = [
+        "-v3",
+        "-optl-W,-verbose",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":TestLib",
