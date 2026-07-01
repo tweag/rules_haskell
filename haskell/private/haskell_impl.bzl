@@ -390,6 +390,18 @@ def _haskell_binary_common_impl(ctx, is_test):
                 collect_data = True,
             ),
         ),
+        # Advertise sources and transitive deps for HPC coverage. Without an
+        # InstrumentedFilesInfo provider, Bazel does not deterministically
+        # instrument transitive Haskell libraries, so their .mix (HPC metadata)
+        # is not surfaced through the provider graph and hpc-codecov scores
+        # executed library modules at 0%. haskell_binary/haskell_test expose
+        # `deps` and `narrowed_deps` (but not `exports`).
+        coverage_common.instrumented_files_info(
+            ctx,
+            source_attributes = ["srcs"],
+            dependency_attributes = ["deps", "narrowed_deps"],
+            extensions = ["hs", "hsc", "lhs", "chs"],
+        ),
         OutputGroupInfo(**compile_info_output_groups(
             name = ctx.label.name,
             workspace_name = ctx.workspace_name,
@@ -722,7 +734,7 @@ def haskell_library_impl(ctx):
         cc_shared_library_infos = [dep[CcSharedLibraryInfo] for dep in deps if CcSharedLibraryInfo in dep],
     )
 
-    return [
+    providers = [
         hs_info,
         out_cc_info,
         out_cc_shared_library_info,
@@ -750,6 +762,29 @@ def haskell_library_impl(ctx):
             ),
         )),
     ]
+
+    # Advertise sources and transitive deps for HPC coverage. Without an
+    # InstrumentedFilesInfo provider, Bazel does not deterministically
+    # instrument transitive Haskell libraries, so their .mix (HPC metadata) is
+    # not surfaced through the provider graph and hpc-codecov scores executed
+    # library modules at 0%. haskell_library exposes `deps`, `exports`, and
+    # `narrowed_deps`.
+    #
+    # haskell_proto_aspect reuses this impl with a "patched ctx" struct (see
+    # the `real_ctx` indirection above) and positionally destructures exactly
+    # the providers above. coverage_common.instrumented_files_info requires a
+    # genuine rule ctx, and the aspect path carries no user sources to score,
+    # so we only attach the provider when invoked with a real rule ctx (which,
+    # unlike the patched struct, has no `real_ctx` attribute).
+    if getattr(ctx, "real_ctx", None) == None:
+        providers.append(coverage_common.instrumented_files_info(
+            ctx,
+            source_attributes = ["srcs"],
+            dependency_attributes = ["deps", "exports", "narrowed_deps"],
+            extensions = ["hs", "hsc", "lhs", "chs"],
+        ))
+
+    return providers
 
 # We should not need this provider. It exists purely as a workaround
 # for https://github.com/bazelbuild/bazel/issues/8129.
