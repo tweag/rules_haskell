@@ -11,8 +11,8 @@ load(
 _rules_nixpkgs_version = "0.13.0"
 _rules_nixpkgs_sha256 = "30271f7bd380e4e20e4d7132c324946c4fdbc31ebe0bbb6638a0f61a37e74397"
 
-_rules_sh_version = "v0.4.0"
-_rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
+_rules_sh_version = "v0.5.0"
+_rules_sh_sha256 = "48b12cb1b2536ef6d8aa6111549098794aa05d21c8cf400493b842943636c709"
 
 def rules_haskell_dependencies_bzlmod():
     """Provide rules_haskell dependencies which are not available as bzlmod modules."""
