@@ -74,7 +74,7 @@ nix-shell --pure shell.nix --argstr ghcVersion 9.6.5
 nix-shell --pure shell.nix --arg docTools false
 ```
 
-The nix shell provides: Bazel 6, GHC (version-specific), Stack, Go, Python3, JDK11, git, and various utilities.
+The nix shell provides: Bazel 7, GHC (version-specific), Stack, Go, Python3, JDK11, git, and various utilities.
 
 ### Module Structure
 

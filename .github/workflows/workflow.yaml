@@ -275,8 +275,8 @@ jobs:
         os: [ubuntu-24.04, macos-14, macos-15-intel, windows-2022]
         bzlmod: [true, false]
         bazel:
-          - "6.x"
           - "7.x"
+          # - "8.x"
         exclude:
           # TODO(cb) add full support for Bazel 7
           - os: windows-2022
