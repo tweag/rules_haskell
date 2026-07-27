@@ -71,7 +71,7 @@ build:remote-cache --keep_backend_build_event_connections_alive=false
 build:remote-cache --noremote_upload_local_results
 build:remote-cache --remote_timeout=3600
 build:remote-cache --experimental_remote_cache_compression
-build:remote-cache --experimental_remote_build_event_upload=minimal
+build:remote-cache --remote_build_event_upload=minimal
 
 # CI Configuration
 # ----------------
