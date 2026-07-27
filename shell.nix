@@ -1,4 +1,8 @@
-{ pkgs ? import ./nixpkgs { }, docTools ? true, ghcVersion ? "9.4.8" }:
+{
+  pkgs ? import ./nixpkgs { },
+  docTools ? true,
+  ghcVersion ? "9.4.8",
+}:
 
 with pkgs;
 
@@ -26,7 +30,7 @@ mkShell {
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.
-    haskell.packages."ghc${ builtins.replaceStrings [ "." ] [ "" ] ghcVersion }".ghc
+    haskell.packages."ghc${builtins.replaceStrings [ "." ] [ "" ] ghcVersion}".ghc
     # Needed for @com_github_golang_protobuf, itself needed by buildifier.
     git
     # Needed to get correct locale for tests with encoding
@@ -39,7 +43,12 @@ mkShell {
     shellcheck
     file
   ]
-  ++ lib.optionals docTools [ graphviz python3Packages.sphinx zip unzip ]
+  ++ lib.optionals docTools [
+    graphviz
+    python3Packages.sphinx
+    zip
+    unzip
+  ]
   ++ lib.optional stdenv.isDarwin macOS-security;
 
   packages = [ bazel_7 ];
