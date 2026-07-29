@@ -9,6 +9,7 @@ buildifier(
 
 buildifier_test(
     name = "buildifier_test",
+    timeout = "short",
     srcs = [
         "//:BUILD.bazel",
         "//:MODULE.bazel",
