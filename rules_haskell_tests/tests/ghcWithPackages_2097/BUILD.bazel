@@ -5,6 +5,9 @@ rules_haskell_integration_test(
     srcs = ["Test.hs"],
     # this test is only useful with a nixpkgs based ghc toolchain
     target_compatible_with = ["@rules_nixpkgs_core//constraints:support_nix"],
+    env = {
+        "BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN": "1",
+    },
     workspace_path = "test",
 )
 
