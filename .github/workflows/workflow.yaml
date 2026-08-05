@@ -105,6 +105,9 @@ jobs:
           build --config=$BUILD_CONFIG
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
+          case ${{ runner.os }} in
+            macOS) echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;;
+          esac
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Build & test - rules_haskell
