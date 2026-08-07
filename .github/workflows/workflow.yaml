@@ -136,13 +136,15 @@ jobs:
           run: |
             # ensure analysis works
             bazel build --nobuild ... | (echo "targets: $( wc -l )")
+            echo " %$% DOT FILES %$%"
+            ls -l .*
+            echo " %$% BAZELRC %$%"
+            if [[ -f .bazelrc.local ]]; then
+              cat .bazelrc.local
+            fi
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
-            fi
-            ls -l .*
-            if [[ -f .bazelrc.local ]]; then
-              cat .bazelrc.local
             fi
             bazel build //tests:run-tests
             # Shutdown Bazel to free up memory
