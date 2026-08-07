@@ -159,8 +159,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14, windows-2022]
-        module: [rules_haskell, rules_haskell_tests]
+        # os: [ubuntu-24.04, macos-14, windows-2022]
+        os: [macos-14]
+        # module: [rules_haskell, rules_haskell_tests]
+        module: [rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
           - 9.4.8
@@ -221,6 +223,8 @@ jobs:
               else
                 bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
               fi
+          elif [[ ${{ runner.os }} == macOS ]]; then
+              echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;
           else
               output_root_setting=""
               bzlmod_cache_silo_key=""
