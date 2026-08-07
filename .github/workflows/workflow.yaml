@@ -246,6 +246,12 @@ jobs:
         working-directory: rules_haskell_tests
         run: |
           # ensure analysis works
+          echo " %$% DOT FILES %$%"
+          ls -l .*
+          echo " %$% BAZELRC %$%"
+          if [[ -f .bazelrc.local ]]; then
+            cat .bazelrc.local
+          fi
           bazelisk build --nobuild ... | (echo "targets: $( wc -l )")
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           # Quote the package specifier so that it works on Windows
