@@ -140,6 +140,10 @@ jobs:
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
             fi
+            ls -l .*
+            if [[ -f .bazelrc.local ]]; then
+              cat .bazelrc.local
+            fi
             bazel build //tests:run-tests
             # Shutdown Bazel to free up memory
             # https://github.com/tweag/rules_haskell/issues/2089.
