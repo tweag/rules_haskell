@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:sets.bzl", "sets")
 load(
@@ -21,10 +22,6 @@ load(
 )
 load("//haskell:private/path_utils.bzl", "infer_main_module")
 load("//haskell:private/pkg_id.bzl", "pkg_id")
-load(
-    "//haskell:private/plugins.bzl",
-    "resolve_plugin_tools",
-)
 load(
     "//haskell:providers.bzl",
     "GhcPluginInfo",
@@ -173,8 +170,9 @@ def _build_haskell_module(
         module_attr.name,
         [dep for plugin in plugin_decl for dep in plugin[GhcPluginInfo].deps],
     )
-    plugins = [resolve_plugin_tools(ctx, plugin[GhcPluginInfo]) for plugin in plugin_decl]
-    (preprocessors_inputs, preprocessors_input_manifests) = ctx.resolve_tools(tools = ctx.attr.tools + module_attr.tools)
+    plugin_infos = [plugin[GhcPluginInfo] for plugin in plugin_decl]
+    plugin_tools = [tool[DefaultInfo].files_to_run for i in plugin_infos for tool in i.tools]
+    attr_tools = [tool[DefaultInfo].files_to_run for tool in (ctx.attr.tools + module_attr.tools)]
 
     # TODO[AH] Support additional outputs such as `.hie`.
 
@@ -254,7 +252,7 @@ def _build_haskell_module(
 
     args.add_all(cc.include_args)
 
-    if plugins or enable_th:
+    if plugin_infos or enable_th:
         # cc toolchain linker flags would be necessary when the interpreter wants to
         # load any libraries
         args.add_all(cc.linker_flags, format_each = "-optl%s")
@@ -278,8 +276,8 @@ def _build_haskell_module(
         plugin_pkg_info = expose_packages(
             package_ids = [
                 pkg_id
-                for plugin in plugins
-                for pkg_id in all_dependencies_package_ids(plugin.deps)
+                for plugin_info in plugin_infos
+                for pkg_id in all_dependencies_package_ids(plugin_info.deps)
             ],
             package_databases = plugin_dep_info.package_databases,
             version = version,
@@ -288,17 +286,10 @@ def _build_haskell_module(
     )
     args.add_all(pkg_info_args)
 
-    for plugin in plugins:
-        args.add("-fplugin={}".format(plugin.module))
-        for opt in plugin.args:
-            args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
-
-    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in plugins])
-    plugin_tool_input_manifests = [
-        manifest
-        for plugin in plugins
-        for manifest in plugin.tool_input_manifests
-    ]
+    for plugin_info in plugin_infos:
+        args.add("-fplugin={}".format(plugin_info.module))
+        for opt in plugin_info.args:
+            args.add_all(["-fplugin-opt", "{}:{}".format(plugin_info.module, opt)])
 
     args.add_all(hs.toolchain.ghcopts)
     args.add_all(user_ghcopts)
@@ -310,7 +301,7 @@ def _build_haskell_module(
         args.add(paths.join(ar_bindir, "otool"), format = "-pgmotool=%s")
         args.add(paths.join(ar_bindir, "install_name_tool"), format = "-pgminstall_name_tool=%s")
 
-    if plugins and not enable_th:
+    if plugin_infos and not enable_th:
         # For #1681. These suppresses bogus warnings about missing libraries which
         # aren't really needed.
         args.add("-Wno-missed-extra-shared-lib")
@@ -330,6 +321,8 @@ def _build_haskell_module(
         args.add("-optl@{}".format(extra_ldflags_file.path))
         input_files.append(extra_ldflags_file)
 
+    env = dicts.add(hs.env, cc.env)
+
     # Compile the module
     hs.toolchain.actions.run_ghc(
         hs,
@@ -345,8 +338,6 @@ def _build_haskell_module(
                 plugin_dep_info.package_databases,
                 plugin_dep_info.interface_dirs,
                 plugin_dep_info.hs_libraries,
-                plugin_tool_inputs,
-                preprocessors_inputs,
                 interface_inputs,
                 abi_inputs,
             ] + [
@@ -361,16 +352,16 @@ def _build_haskell_module(
                 if enable_th
             ],
         ),
-        input_manifests = preprocessors_input_manifests + plugin_tool_input_manifests,
         outputs = outputs,
         mnemonic = "HaskellBuildObject" + ("Prof" if with_profiling else ""),
         progress_message = "HaskellBuildObject {} {}".format(hs.label, module.label),
-        env = hs.env,
+        env = env,
         arguments = args,
         interface_inputs = interface_inputs,
         extra_name = module.label.package.replace("/", "_") + "_" + module.label.name,
         hi_file = module_outputs.hi,
         abi_file = module_outputs.abi,
+        extra_tools = attr_tools + plugin_tools,
     )
 
     is_boot = _is_boot(src.path)
