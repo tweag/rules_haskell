@@ -571,6 +571,11 @@ def link(output, libraries, rpaths, args):
         rpaths = shorten_rpaths(rpaths, libraries, output)
 
     args.extend(rpath_args(rpaths))
+    # See note in cabal_wrapper.py
+    if "RUNFILES_DIR" in os.environ:
+        del os.environ["RUNFILES_DIR"]
+    if "RUNFILES_MANIFEST_FILE" in os.environ:
+        del os.environ["RUNFILES_MANIFEST_FILE"]
     # Note: `RULES_HASKELL_SILENCE_LINKER` is only set if called from doctest,
     #       which is used to silence the linker output to not interfere with the output
     #       from GHCi
@@ -1021,6 +1026,13 @@ def find_cc():
         # being called from a GHCi REPL then we need to find this wrapper
         # script using Bazel runfiles.
         r = bazel_runfiles.Create()
+        if r is None:
+            manifest_path = os.environ.get("CC_WRAPPER_MANIFEST", None)
+            exe_path = os.environ.get("CC_WRAPPER_PATH", None)
+            if manifest_path is not None and os.path.isfile(manifest_path):
+                r = bazel_runfiles.CreateManifestBased(manifest_path)
+            elif exe_path is not None and os.path.isfile(exe_path):
+                r = bazel_runfiles.CreateDirectoryBased(exe_path + ".runfiles")
         cc = r.Rlocation("/".join([WORKSPACE, CC]))
         if cc is None and is_windows():
             # We must use "/" instead of os.path.join on Windows, because the
