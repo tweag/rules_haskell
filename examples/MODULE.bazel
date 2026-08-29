@@ -31,7 +31,7 @@ bazel_dep(
 
 bazel_dep(
     name = "rules_cc",
-    version = "0.1.1",
+    version = "0.2.0",
 )
 bazel_dep(
     name = "rules_sh",
