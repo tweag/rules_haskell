@@ -4,6 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 import Control.Exception.Safe (bracket, bracket_)
+import Control.Monad (when)
 import Data.Foldable (for_)
 import Data.List (delete, intercalate, isInfixOf, isPrefixOf, isSuffixOf, sort, stripPrefix)
 import GHC.Stack (HasCallStack)
@@ -68,7 +69,11 @@ main = hspec $  around_ printStatsHook $ do
         assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
       it "for binaries" $ do
-        assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+        -- Bazel 7: cc_library no longer produces shared library targets by default.
+        when (os /= "darwin") $
+          assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+
+        assertSuccess (bazel ["run", "//tests/binary-indirect-cbits-fully-static:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
         assertSuccess (bazel ["run", "//tests/repl-targets:hs-test-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
@@ -171,7 +176,7 @@ main = hspec $  around_ printStatsHook $ do
                       let atPrefix = stripSuffix' "a_a_unit_file" fullAUnitFile
                           prefix = stripPrefix' "@" atPrefix
                           shortPrefix = stripSuffix' "_tests/multi_repl/" prefix
-                          stripSuffix' sfx target = reverse $ stripPrefix' (reverse sfx) $ reverse target 
+                          stripSuffix' sfx target = reverse $ stripPrefix' (reverse sfx) $ reverse target
                           expandPath f = prefix ++ f
                       lines stdout `shouldBe` makeExpected atPrefix
                       checkUnitFile
@@ -232,7 +237,7 @@ main = hspec $  around_ printStatsHook $ do
       let p (stdout, stderrCapture) = not $ any ("error" `isInfixOf`) [stdout, stderrCapture]
       outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
-    -- GH2096: This test is flaky in CI using the MacOS GitHub runners. The flakiness is slowing 
+    -- GH2096: This test is flaky in CI using the MacOS GitHub runners. The flakiness is slowing
     -- development on other features. Disable this test until a satisfying solution is found.
     -- it "Repl works with remote_download_toplevel" $ do
     --   let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
@@ -260,7 +265,7 @@ bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 shutdownBazel :: String -> IO ()
 shutdownBazel path = do
   -- Related to https://github.com/tweag/rules_haskell/issues/2089
-  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Shutdown 
+  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Shutdown
   -- Bazel when done executing tests for the workspace.
   assertSuccess (bazel ["shutdown"]) { Process.cwd = Just path }
   pure ()
