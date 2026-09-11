@@ -4,6 +4,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 import Control.Exception.Safe (bracket, bracket_)
+import Control.Monad (when)
 import Data.Foldable (for_)
 import Data.List (delete, intercalate, isInfixOf, isPrefixOf, isSuffixOf, sort, stripPrefix)
 import GHC.Stack (HasCallStack)
@@ -64,13 +65,31 @@ main = hspec $  around_ printStatsHook $ do
           assertSuccess (bazel ["build", "@stackage-pinning-test//:hspec"])
 
     describe "repl" $ do
-      it "for libraries" $ do
-        assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
+        -- Bazel 7: cc_library no longer produces shared library targets by default,
+        -- which breaks on macOS but seems to be fine on linux. Test that shared libraries
+        -- work on macOS, and that the old behaviour works on linux.
+      let replTest target args = do
+            describe (last $ splitBazelTarget target) $ do
+              when ( os /= "darwin") $
+                it "cc_library" $      assertSuccess (bazel $ ["run", target ++        "@repl", "--", "-ignore-dot-ghci"] ++ args)
+              it "cc_shared_library" $ assertSuccess (bazel $ ["run", target ++ "-shared@repl", "--", "-ignore-dot-ghci"] ++ args)
 
-      it "for binaries" $ do
-        assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+      describe "for libraries" $ do
+        -- TODO(@axman6): Why doesn't this work?
+        -- replTest "//tests/repl-targets:hs-lib" ["-e", "1 + 2"]
+        replTest "//tests/repl-targets:hs-lib-bad" ["-e", "1 + 2"]
 
-        assertSuccess (bazel ["run", "//tests/repl-targets:hs-test-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
+
+      describe "for binaries" $ do
+
+        replTest "//tests/binary-indirect-cbits:binary-indirect-cbits" ["-e", ":main"]
+
+        -- TODO(@axman6): Why doesn't this work?
+        -- when (os /= "darwin") $
+        --   it "binary-indirect-cbits-fully-static" $
+        --     assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+
+        replTest "//tests/repl-targets:hs-test-bad" ["-e", "1 + 2"]
 
       it "with rebindable syntax" $ do
         let p' (stdout, _stderr) = lines stdout == ["True"]
@@ -171,7 +190,7 @@ main = hspec $  around_ printStatsHook $ do
                       let atPrefix = stripSuffix' "a_a_unit_file" fullAUnitFile
                           prefix = stripPrefix' "@" atPrefix
                           shortPrefix = stripSuffix' "_tests/multi_repl/" prefix
-                          stripSuffix' sfx target = reverse $ stripPrefix' (reverse sfx) $ reverse target 
+                          stripSuffix' sfx target = reverse $ stripPrefix' (reverse sfx) $ reverse target
                           expandPath f = prefix ++ f
                       lines stdout `shouldBe` makeExpected atPrefix
                       checkUnitFile
@@ -232,7 +251,7 @@ main = hspec $  around_ printStatsHook $ do
       let p (stdout, stderrCapture) = not $ any ("error" `isInfixOf`) [stdout, stderrCapture]
       outputSatisfy p (bazel ["run", "//tests/repl-name-conflicts:lib@repl", "--", "-ignore-dot-ghci", "-e", "stdin"])
 
-    -- GH2096: This test is flaky in CI using the MacOS GitHub runners. The flakiness is slowing 
+    -- GH2096: This test is flaky in CI using the MacOS GitHub runners. The flakiness is slowing
     -- development on other features. Disable this test until a satisfying solution is found.
     -- it "Repl works with remote_download_toplevel" $ do
     --   let p (stdout, stderr) = not $ any ("error" `isInfixOf`) [stdout, stderr]
@@ -260,7 +279,7 @@ bazelQuery q = lines <$> runIO (Process.readProcess "bazel" ["query", q] "")
 shutdownBazel :: String -> IO ()
 shutdownBazel path = do
   -- Related to https://github.com/tweag/rules_haskell/issues/2089
-  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Shutdown 
+  -- We experience intermittent "Exit Code: ExitFailure (-9)" errors. Shutdown
   -- Bazel when done executing tests for the workspace.
   assertSuccess (bazel ["shutdown"]) { Process.cwd = Just path }
   pure ()
@@ -324,3 +343,12 @@ _printDiskInfo = do
 -- Generated dependencies for testing the ghcide support
 _ghciIDE :: Int
 _ghciIDE = a + b
+
+
+-- Splits a bazel target string into its components (roughly), ignoring the
+-- leading "//" if present.
+splitBazelTarget :: String -> [String]
+splitBazelTarget "" = []
+splitBazelTarget ('/':'/':rest) = splitBazelTarget rest
+splitBazelTarget target = case break (\c -> c == ':' || c == '/') target of
+  (before, after) -> before : splitBazelTarget (drop 1 after)
