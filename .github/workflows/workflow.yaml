@@ -105,9 +105,9 @@ jobs:
           build --config=$BUILD_CONFIG
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
-          case ${{ runner.os }} in
-            macOS) echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;;
-          esac
+          if [[ ${{ runner.os }} == macOS ]]; then
+             echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;
+          fi
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Build & test - rules_haskell
@@ -136,12 +136,6 @@ jobs:
           run: |
             # ensure analysis works
             bazel build --nobuild ... | (echo "targets: $( wc -l )")
-            echo " %$% DOT FILES %$%"
-            ls -l .*
-            echo " %$% BAZELRC %$%"
-            if [[ -f .bazelrc.local ]]; then
-              cat .bazelrc.local
-            fi
             # XXX run start script `--with-bzlmod=true` when supported
             if ! ${{ matrix.bzlmod }}; then
               ./tests/run-start-script.sh --use-nix --with-bzlmod=${{ matrix.bzlmod }}
@@ -250,12 +244,6 @@ jobs:
         working-directory: rules_haskell_tests
         run: |
           # ensure analysis works
-          echo " %$% DOT FILES %$%"
-          ls -l .*
-          echo " %$% BAZELRC %$%"
-          if [[ -f .bazelrc.local ]]; then
-            cat .bazelrc.local
-          fi
           bazelisk build --nobuild ... | (echo "targets: $( wc -l )")
           ./tests/run-start-script.sh --use-bindists --with-bzlmod=${{ matrix.bzlmod }}
           # Quote the package specifier so that it works on Windows
