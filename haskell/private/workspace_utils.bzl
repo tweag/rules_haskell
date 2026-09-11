@@ -25,7 +25,7 @@ def execute_or_fail_loudly(
     )
     if exec_result.return_code != 0:
         arguments = [_as_string(x) for x in arguments]
-        fail("\n".join(["Command failed: " + " ".join(arguments), exec_result.stderr]))
+        fail("\n".join(["Command failed: " + " ".join(arguments), "-- STDOUT --", exec_result.stdout, "-- STDERR --", exec_result.stderr]))
     return exec_result
 
 def _as_string(v):

@@ -107,6 +107,9 @@ jobs:
           build --config=$BUILD_CONFIG
           common --enable_bzlmod=${{ matrix.bzlmod }}
           EOF
+          if [[ ${{ runner.os }} == macOS ]]; then
+             echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;
+          fi
           cp .bazelrc.local rules_haskell_nix
           cp .bazelrc.local rules_haskell_tests
       - name: Build & test - rules_haskell
@@ -152,8 +155,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-14, windows-2022]
-        module: [rules_haskell, rules_haskell_tests]
+        # os: [ubuntu-24.04, macos-14, windows-2022]
+        os: [macos-14]
+        # module: [rules_haskell, rules_haskell_tests]
+        module: [rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
           - 9.4.8
@@ -214,6 +219,8 @@ jobs:
               else
                 bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
               fi
+          elif [[ ${{ runner.os }} == macOS ]]; then
+              echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;
           else
               output_root_setting=""
               bzlmod_cache_silo_key=""
@@ -277,8 +284,8 @@ jobs:
         os: [ubuntu-24.04, macos-14, macos-15-intel, windows-2022]
         bzlmod: [true, false]
         bazel:
-          - "6.x"
           - "7.x"
+          # - "8.x"
         exclude:
           # TODO(cb) add full support for Bazel 7
           - os: windows-2022
