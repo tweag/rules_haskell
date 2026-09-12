@@ -42,9 +42,8 @@ def _compilation_defaults(
         my_pkg_id,
         version,
         extra_ldflags_file,
-        plugins,
-        non_default_plugins,
-        preprocessors):
+        plugin_infos,
+        non_default_plugin_infos):
     """Compute variables common to all compilation targets (binary and library).
 
     Returns:
@@ -134,9 +133,9 @@ def _compilation_defaults(
         ]
 
     package_ids = []
-    all_plugins = plugins + non_default_plugins
-    for plugin in all_plugins:
-        package_ids.extend(all_dependencies_package_ids(plugin.deps))
+    all_plugin_infos = plugin_infos + non_default_plugin_infos
+    for plugin_info in all_plugin_infos:
+        package_ids.extend(all_dependencies_package_ids(plugin_info.deps))
 
     (pkg_info_inputs, pkg_info_args) = pkg_info_to_compile_flags(
         hs,
@@ -258,18 +257,11 @@ def _compilation_defaults(
     args.add_all(compile_flags)
 
     # Plugins
-    for plugin in plugins:
-        args.add("-fplugin={}".format(plugin.module))
-    for plugin in all_plugins:
-        for opt in plugin.args:
-            args.add_all(["-fplugin-opt", "{}:{}".format(plugin.module, opt)])
-
-    plugin_tool_inputs = depset(transitive = [plugin.tool_inputs for plugin in all_plugins])
-    plugin_tool_input_manifests = [
-        manifest
-        for plugin in all_plugins
-        for manifest in plugin.tool_input_manifests
-    ]
+    for plugin_info in plugin_infos:
+        args.add("-fplugin={}".format(plugin_info.module))
+    for plugin_info in all_plugin_infos:
+        for opt in plugin_info.args:
+            args.add_all(["-fplugin-opt", "{}:{}".format(plugin_info.module, opt)])
 
     # Pass source files
     args.add_all(source_files)
@@ -313,10 +305,7 @@ def _compilation_defaults(
             plugin_dep_info.hs_libraries,
             depset(get_ghci_library_files(hs, cc.cc_libraries_info, cc.transitive_libraries + cc.plugin_libraries)),
             java.inputs,
-            preprocessors.inputs,
-            plugin_tool_inputs,
         ]),
-        input_manifests = preprocessors.input_manifests + plugin_tool_input_manifests,
         object_files = object_files,
         dyn_object_files = dyn_object_files,
         interface_files = interface_files,
@@ -363,8 +352,10 @@ def compile_binary(
         version,
         extra_ldflags_file,
         inspect_coverage = False,
-        plugins = [],
-        non_default_plugins = [],
+        plugin_infos = [],
+        plugin_tools = [],
+        non_default_plugin_infos = [],
+        non_default_plugin_tools = [],
         preprocessors = []):
     """Compile a Haskell target into object files suitable for linking.
 
@@ -394,9 +385,8 @@ def compile_binary(
         my_pkg_id = None,
         version = version,
         extra_ldflags_file = extra_ldflags_file,
-        plugins = plugins,
-        non_default_plugins = non_default_plugins,
-        preprocessors = preprocessors,
+        plugin_infos = plugin_infos,
+        non_default_plugin_infos = non_default_plugin_infos,
     )
     c.args.add_all(["-main-is", main_function])
     if dynamic:
@@ -418,12 +408,12 @@ def compile_binary(
             hs,
             cc,
             inputs = c.inputs,
-            input_manifests = c.input_manifests,
             outputs = c.outputs + [datum.mix_file for datum in coverage_data],
             mnemonic = "HaskellBuildBinary" + ("Prof" if with_profiling else ""),
             progress_message = "HaskellBuildBinary {}".format(hs.label),
             env = c.env,
             arguments = c.args,
+            extra_tools = preprocessors + plugin_tools + non_default_plugin_tools,
         )
 
     return struct(
@@ -455,8 +445,10 @@ def compile_library(
         objects_dir,
         my_pkg_id,
         extra_ldflags_file,
-        plugins = [],
-        non_default_plugins = [],
+        plugin_infos = [],
+        plugin_tools = [],
+        non_default_plugin_infos = [],
+        non_default_plugin_tools = [],
         preprocessors = []):
     """Build arguments for Haskell package build.
 
@@ -490,9 +482,8 @@ def compile_library(
         my_pkg_id = my_pkg_id,
         version = my_pkg_id.version,
         extra_ldflags_file = extra_ldflags_file,
-        plugins = plugins,
-        non_default_plugins = non_default_plugins,
-        preprocessors = preprocessors,
+        plugin_infos = plugin_infos,
+        non_default_plugin_infos = non_default_plugin_infos,
     )
     if with_shared:
         c.args.add("-dynamic-too")
@@ -515,12 +506,12 @@ def compile_library(
             hs,
             cc,
             inputs = c.inputs,
-            input_manifests = c.input_manifests,
             outputs = c.outputs + [datum.mix_file for datum in coverage_data],
             mnemonic = "HaskellBuildLibrary" + ("Prof" if with_profiling else ""),
             progress_message = "HaskellBuildLibrary {}".format(hs.label),
             env = c.env,
             arguments = c.args,
+            extra_tools = preprocessors + plugin_tools + non_default_plugin_tools,
         )
 
     return struct(

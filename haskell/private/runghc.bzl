@@ -24,21 +24,33 @@ def _runghc_wrapper_impl(ctx):
         content = """\
 #!/usr/bin/env python3
 
+import os
 import subprocess
 import sys
 from python.runfiles import runfiles
 
 r = runfiles.Create()
 
-subprocess.run([r.Rlocation("{runghc}")] + sys.argv[1:], check=True)
+# Get the correct location first
+ghc_location = r.Rlocation("{runghc}")
+
+# Clear out the environment so that downstream tools don't use the wrong
+# runfiles environment. See the comment in cabal_wrapper.py for more details.
+if "RUNFILES_DIR" in os.environ:
+    del os.environ["RUNFILES_DIR"]
+if "RUNFILES_MANIFEST_FILE" in os.environ:
+    del os.environ["RUNFILES_MANIFEST_FILE"]
+
+subprocess.run([ghc_location] + sys.argv[1:], check=True)
 """.format(runghc = runghc_runfile_path),
         is_executable = True,
     )
 
     return [DefaultInfo(
         executable = runghc_wrapper_file,
-        runfiles = hs_toolchain.cc_wrapper.runfiles.merge(
-            ctx.runfiles(files = [runghc_wrapper_file, hs_toolchain.tools.runghc]),
+        runfiles = ctx.runfiles(
+            files = [runghc_wrapper_file, hs_toolchain.tools.runghc, hs_toolchain.cc_wrapper.executable],
+            transitive_files = hs_toolchain.cc_wrapper.runfiles.files,
         ),
     )]
 
