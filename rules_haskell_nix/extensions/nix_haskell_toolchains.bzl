@@ -244,4 +244,6 @@ nix_haskell_toolchains = module_extension(
         "new": _new_tag,
     },
     doc = "This extension is used to install and declare nix-based haskell toolchains.",
+    os_dependent = True,
+    arch_dependent = True,
 )
