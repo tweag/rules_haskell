@@ -98,14 +98,14 @@ with open(libz_soname) as fh:
     (sodir, sobase) = os.path.split(sofile)
 
 # Locate test artifacts.
-libHSzlib = r.Rlocation(os.path.join(
+libHSzlib = r.Rlocation(os.path.normpath(os.path.join(
     os.environ["TEST_WORKSPACE"],
     sys.argv[2],
-))
-cabal_binary = r.Rlocation(os.path.join(
+)))
+cabal_binary = r.Rlocation(os.path.normpath(os.path.join(
     os.environ["TEST_WORKSPACE"],
     sys.argv[3],
-))
+)))
 
 def read_runpaths(binary, sobase):
     if platform.system() == "Darwin":
