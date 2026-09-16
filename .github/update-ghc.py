@@ -13,19 +13,27 @@ GHC_GITLAB_SERVER = "gitlab.haskell.org"
 
 def get_gitlab_tags_with_prefix(project_id, prefix):
     connection = http.client.HTTPSConnection(GHC_GITLAB_SERVER)
+    headers = {
+        'User-Agent': 'Python Http.Client'
+    }
     encoded_project_id = encoded_project_id = quote(project_id, safe="")
     endpoint = f"/api/v4/projects/{encoded_project_id}/repository/tags?search=^{prefix}&order-by=version"
 
-    connection.request("GET", endpoint)
+    connection.request("GET", endpoint, headers=headers)
     response = connection.getresponse()
+    content_type = response.headers.get('Content-Type')
 
     if response.status == 200:
-        tags_data = response.read().decode("utf-8")
-        tags = json.loads(tags_data)
-        return tags
+        if 'application/json' in content_type: 
+            tags_data = response.read().decode("utf-8")
+            tags = json.loads(tags_data)
+            return tags
+        else:
+            print(f"Error: unexpected content type: {content_type}", file=sys.stderr)
     else:
-        print(f"Error: {response.status} - {response.reason}")
-        return None
+        print(f"Error: {response.status} - {response.reason}", file=sys.stderr)
+
+    return None
 
 
 project_id = "ghc/ghc"
