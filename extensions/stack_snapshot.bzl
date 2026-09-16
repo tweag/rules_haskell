@@ -343,6 +343,8 @@ def _stack_snapshot_impl(mctx):
 
 stack_snapshot = module_extension(
     implementation = _stack_snapshot_impl,
+    os_dependent = True,
+    arch_dependent = True,
     tag_classes = {
         "package": _package_tag,
         "snapshot": _snapshot_tag,
