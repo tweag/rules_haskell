@@ -145,7 +145,7 @@ output = []
 # Accumulate package id to package name mappings.
 pkg_id_map = []
 
-for conf in glob.glob(os.path.join(package_conf_dir, '*.conf')):
+for conf in sorted(glob.glob(os.path.join(package_conf_dir, '*.conf'))):
     with open(conf, 'r') as f:
         pkg = package_configuration.parse_package_configuration(f)
 
