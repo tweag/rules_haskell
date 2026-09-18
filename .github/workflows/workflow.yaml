@@ -275,6 +275,14 @@ jobs:
           name: Logs ${{ matrix.os }} ${{ matrix.module }} ${{ matrix.bzlmod }}
           path: logs
 
+      - name: Debug with ssh
+        uses: owenthereal/action-upterm@v1.15.0
+        if: ${{ failure() }}
+        with:
+          limit-access-to-actor: true # Restrict to the user who triggered the workflow
+          limit-access-to-users: axman6,avdv # Specific authorized users only
+
+
   examples-bindist:
     name: Build & Test Examples - bindist
     strategy:
