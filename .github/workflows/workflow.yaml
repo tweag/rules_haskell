@@ -217,9 +217,10 @@ jobs:
               else
                 bzlmod_cache_silo_key='build --remote_default_exec_properties=bzlmod-cache-silo-key=workspace'
               fi
-          elif [[ ${{ runner.os }} == macOS ]]; then
-              echo "test --test_tag_filters=-dont_test_on_darwin" >>.bazelrc.local;
           else
+              if [[ ${{ runner.os }} == macOS ]]; then
+                  echo "test --test_tag_filters=-dont_test_on_darwin,-requires_nix" >>.bazelrc.local;
+              fi
               output_root_setting=""
               bzlmod_cache_silo_key=""
           fi
