@@ -71,16 +71,19 @@ main = hspec $  around_ printStatsHook $ do
             assertSuccess (bazel ["run", "//tests/repl-targets:hs-lib-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
       describe "for binaries" $ do
-        -- Bazel 7: cc_library no longer produces shared library targets by default.
+        -- Bazel 7: cc_library no longer produces shared library targets by default,
+        -- which breaks on macOS but seems to be fine on linux.
         when (os /= "darwin") $
           it "binary-indirect-cbits@repl" $
             assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
-        it "binary-indirect-cbits-fully-static@repl" $
-          assertSuccess (bazel ["run", "//tests/binary-indirect-cbits-fully-static:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+        when (os /= "darwin") $
+          it "binary-indirect-cbits-fully-static@repl" $
+            assertSuccess (bazel ["run", "//tests/binary-indirect-cbits-fully-static:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
-        it "repl-targets:hs-test-bad@repl" $
-          assertSuccess (bazel ["run", "//tests/repl-targets:hs-test-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
+        when (os /= "darwin") $
+          it "repl-targets:hs-test-bad@repl" $
+            assertSuccess (bazel ["run", "//tests/repl-targets:hs-test-bad@repl", "--", "-ignore-dot-ghci", "-e", "1 + 2"])
 
       it "with rebindable syntax" $ do
         let p' (stdout, _stderr) = lines stdout == ["True"]
