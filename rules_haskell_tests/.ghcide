@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
-set -euo pipefail
-build_ghcide() {
-  bazel build //tests/ghcide \
-    --experimental_show_artifacts \
-    2>&1 \
-    | awk '
-      /^>>>/ { print substr($1, 4); next }
-      { print $0 > "/dev/stderr" }
-    '
-}
-ghcide="$(build_ghcide)"
+set -xeuo pipefail
+
+target="${GHCIDE_TARGET:-//tests/ghcide}"
+
+# Keep build/query flags in sync (e.g. --config=ci in CI).
+read -r -a bazel_flags <<< "${BAZEL_FLAGS:-}"
+
+bazel build "${bazel_flags[@]}" "$target"
+
+ghcide_rel_path="$(bazel cquery "${bazel_flags[@]}" "$target" --output=starlark --starlark:expr="target.files_to_run.executable.path" 2>/dev/null)"
+execution_root="$(bazel info "${bazel_flags[@]}" execution_root)"
+
+if [[ -z "$ghcide_rel_path" ]]; then
+  echo "Could not resolve executable for target $target"
+  exit 1
+fi
+
+if [[ "$ghcide_rel_path" = /* ]]; then
+  ghcide="$ghcide_rel_path"
+else
+  ghcide="$execution_root/$ghcide_rel_path"
+fi
+
+if [[ ! -e "$ghcide" ]]; then
+  echo "ghcide binary not found at $ghcide"
+  exit 1
+else
+  echo "ghcide binary found at $ghcide"
+fi
+
 "$ghcide" "$@"

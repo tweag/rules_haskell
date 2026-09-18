@@ -642,7 +642,7 @@ py_runtime_pair(
 toolchain(
     name = "toolchain",
     toolchain = ":py_runtime_pair",
-    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    toolchain_type =  "@rules_python//python:toolchain_type",
     exec_compatible_with = [
         "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
