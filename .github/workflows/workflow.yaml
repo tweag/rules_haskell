@@ -281,6 +281,7 @@ jobs:
         with:
           limit-access-to-actor: true # Restrict to the user who triggered the workflow
           limit-access-to-users: axman6,avdv # Specific authorized users only
+          wait-timeout-minutes: 5
 
 
   examples-bindist:
