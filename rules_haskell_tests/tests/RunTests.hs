@@ -79,7 +79,7 @@ main = hspec $  around_ printStatsHook $ do
 
         when (os /= "darwin") $
           it "binary-indirect-cbits-fully-static@repl" $
-            assertSuccess (bazel ["run", "//tests/binary-indirect-cbits-fully-static:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
+            assertSuccess (bazel ["run", "//tests/binary-indirect-cbits:binary-indirect-cbits-fully-static@repl", "--", "-ignore-dot-ghci", "-e", ":main"])
 
         when (os /= "darwin") $
           it "repl-targets:hs-test-bad@repl" $
