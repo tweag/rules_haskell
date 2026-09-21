@@ -14,6 +14,19 @@ haskell_binary(
     ],
 )
 
+# Needed on macOS where cc_library doesn't produce shared libraries which can be
+# used in @repl targets.
+haskell_binary(
+    name = "binary-indirect-cbits-shared",
+    srcs = ["Main.hs"],
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/hackage:base",
+        "//tests/library-with-cbits:library-with-cbits-shared",
+    ],
+)
+
 haskell_binary(
     name = "binary-indirect-cbits-partially-static",
     srcs = ["Main.hs"],

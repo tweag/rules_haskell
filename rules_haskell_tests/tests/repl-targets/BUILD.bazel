@@ -42,6 +42,25 @@ haskell_library(
     ],
 )
 
+# Needed on macOS where cc_library doesn't produce shared libraries which can be
+# used in @repl targets.
+haskell_library(
+    name = "hs-lib-shared",
+    srcs = [
+        "Foo.hs",
+        "Hsc.hsc",
+        ":chs",
+        ":codegen",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary-shared",
+        "//tests/hackage:array",
+        "//tests/hackage:base",
+    ],
+)
+
 haskell_library(
     name = "hs-lib-bad",
     srcs = [
@@ -59,6 +78,27 @@ haskell_library(
     ],
 )
 
+# Needed on macOS where cc_library doesn't produce shared libraries which can be
+# used in @repl targets.
+haskell_library(
+    name = "hs-lib-bad-shared",
+    srcs = [
+        "Bad.hs",
+    ],
+    tags = [
+        "manual",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary-shared",
+        "//tests/hackage:base",
+        "@stackage//:array",
+    ],
+)
+
+# Needed on macOS where cc_library doesn't produce shared libraries which can be
+# used in @repl targets.
 haskell_test(
     name = "hs-test-bad",
     srcs = [
@@ -71,6 +111,23 @@ haskell_test(
     deps = [
         "//tests:zlib",
         "//tests/data:ourclibrary",
+        "//tests/hackage:base",
+        "@stackage//:array",
+    ],
+)
+
+haskell_test(
+    name = "hs-test-bad-shared",
+    srcs = [
+        "Bad.hs",
+    ],
+    tags = [
+        "manual",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests:zlib",
+        "//tests/data:ourclibrary-shared",
         "//tests/hackage:base",
         "@stackage//:array",
     ],
