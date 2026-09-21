@@ -326,7 +326,15 @@ printStats msg = do
 -- Related to https://github.com/tweag/rules_haskell/issues/2089
 _printMemory :: IO ()
 _printMemory = do
-  (exitCode, stdOut, stdErr) <- Process.readProcessWithExitCode topPath ["-l", "1", "-s", "0", "-o", "mem", "-n", "15"] ""
+  -- Linux top doesn't have BSD's -n option for limiting the number of processes so show
+  -- to jump through some hoops.
+  -- See:https://stackoverflow.com/questions/29845711/limit-top-command-to-only-display-top-x-processes-on-command-line
+  let topDef  | os == "darwin" =
+                  Process.proc topPath ["-l", "1", "-s", "0", "-o", "mem", "-n", "15" ]
+              | otherwise     =
+                  Process.shell $
+                    unwords (topPath : ["-n", "1", "-d", "0", "-o", "%MEM", "-b", "-w", "140", "|" , "grep", "-A21", "\"load average\""])
+  (exitCode, stdOut, stdErr) <- Process.readCreateProcessWithExitCode topDef ""
   case exitCode of
     ExitSuccess -> putStrLn stdOut
     ExitFailure _ -> putStrLn ("=== _printMemory failed ===\n" ++ stdErr)
