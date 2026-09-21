@@ -49,10 +49,11 @@ jobs:
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.4.8
           - 9.6.5
           - 9.8.2
           - 9.10.3
+          # - 9.12.4
+          # - 9.14.1
         exclude:
           - module: rules_haskell_nix
 
@@ -156,10 +157,11 @@ jobs:
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.4.8
           - 9.6.5
           - 9.8.2
           - 9.10.3
+          # - 9.12.4
+          # - 9.14.1
         exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
