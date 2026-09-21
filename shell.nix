@@ -1,7 +1,7 @@
 {
   pkgs ? import ./nixpkgs { },
   docTools ? true,
-  ghcVersion ? "9.4.8",
+  ghcVersion ? "9.6.5",
 }:
 
 with pkgs;
