@@ -323,7 +323,7 @@ def link_library_static(hs, cc, _posix, _dep_info, object_files, my_pkg_id, with
             "lib{0}.a".format(pkg_id.library_name(hs, my_pkg_id, prof_suffix = with_profiling)),
         ),
     )
-    inputs = depset(cc.files, transitive = [object_files])
+    inputs = depset(transitive = [object_files])
     args = hs.actions.args()
 
     # On Windows, any of the object files might actually be static archives already
