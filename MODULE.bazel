@@ -9,7 +9,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_java",
-    version = "7.4.0",
+    version = "8.6.1",
 )
 bazel_dep(
     name = "rules_license",
@@ -17,26 +17,16 @@ bazel_dep(
 )
 bazel_dep(
     name = "abseil-cpp",
-    version = "20240116.3",
+    version = "20260107.1",
 )
 bazel_dep(
     name = "protobuf",
-    version = "27.0",
+    version = "31.1",
     repo_name = "com_google_protobuf",
 )
-
-# workaround build problems on Windows
-single_version_override(
-    module_name = "protobuf",
-    patch_strip = 1,
-    # see https://github.com/protocolbuffers/protobuf/issues/16844
-    # TODO: remove for protobuf version >= 31.0
-    patches = ["//haskell:private/com_google_protobuf-protoc-dbghlp.diff"],
-)
-
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.15",
+    version = "0.2.9",
 )
 bazel_dep(
     name = "rules_nodejs",

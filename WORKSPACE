@@ -41,6 +41,31 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
 )
 
+# bazel_features's own repos, needed by rules_cc's compatibility_proxy setup below.
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
+
+# rules_proto expects bazel_features under this name (matches MODULE.bazel's repo_name remap).
+http_archive(
+    name = "proto_bazel_features",
+    sha256 = "89eca73d4c334cf664f84920365d2ce04e2c98099b89f7c5b676b5f377c8e754",
+    strip_prefix = "bazel_features-1.48.1",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.48.1/bazel_features-v1.48.1.tar.gz",
+)
+
+# rules_cc's compatibility_proxy repo, normally set up by its module extension under bzlmod.
+# Needed before rules_proto/rules_java, which both load @rules_cc//cc:defs.bzl transitively.
+load("@rules_cc//cc:extensions.bzl", cc_compatibility_proxy_repo = "compatibility_proxy_repo")
+
+cc_compatibility_proxy_repo()
+
+# rules_java's compatibility_proxy repo, normally set up by its module extension under bzlmod.
+# Needed before rules_proto, which loads @rules_java//java/private:proto_support.bzl transitively.
+load("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy_repo")
+
+compatibility_proxy_repo()
+
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 rules_proto_dependencies()
