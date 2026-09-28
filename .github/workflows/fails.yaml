@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-slim
     if: failure() || github.event.workflow_run.conclusion == 'failure'
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      
       - name: Comment on issue with failures
         env:
           ISSUE_NUMBER: '2456'  # Change to your tracking issue number
@@ -64,4 +62,7 @@ jobs:
               issue_number: parseInt(issueNumber),
               body: comment,
             });
+
+            // Append the comment to the summary as well
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, comment);
 
