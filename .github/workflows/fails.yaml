@@ -1,0 +1,78 @@
+name: Collect CI Failures
+
+on:
+  workflow_run:
+    workflows: ['Continuous integration']  # List your CI workflow names
+    types: [completed]
+
+permissions:
+  issues: write
+
+jobs:
+  collect-failures:
+    runs-on: ubuntu-slim
+    if: failure() || github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      
+      - name: Get failed jobs
+        id: get-failed-jobs
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const repo = context.repo;
+            
+            // Get all jobs from the failed workflow run
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: repo.owner,
+              repo: repo.repo,
+              run_id: runId
+            });
+            
+            // Filter failed jobs
+            const failedJobs = jobs.data.jobs.filter(job => job.conclusion === 'failure');
+            
+            if (failedJobs.length === 0) return;
+            
+            // Format the failure info
+            const failureInfo = failedJobs.map(job => {
+              return `- [${job.name}](${job.html_url}) - ${new Date().toISOString()}`;
+            }).join('\n');
+            
+            core.setOutput('failed_jobs', failureInfo);
+            core.setOutput('run_url', context.payload.workflow_run.html_url);
+            core.setOutput('workflow_name', context.payload.workflow_run.name);
+
+      - name: Comment on issue with failures
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          ISSUE_NUMBER: '2456'  # Change to your tracking issue number
+        with:
+          script: |
+            const failedJobs = '${{ steps.get-failed-jobs.outputs.failed_jobs }}';
+            const runUrl = '${{ steps.get-failed-jobs.outputs.run_url }}';
+            const workflowName = '${{ steps.get-failed-jobs.outputs.workflow_name }}';
+            const commitSha = '${{ steps.get-failed-jobs.outputs.commit_sha }}';
+            const issueNumber = parseInt(process.env.ISSUE_NUMBER);
+            
+            if (!failedJobs) {
+              console.log('No failed jobs found');
+              return;
+            }
+            
+            // Create comment with failure details
+            const comment = `**${workflowName}** failed at ${new Date().toISOString()}\n\n` +
+              `Commit: [\`${commitSha.substring(0, 7)}\`](${context.payload.repository.html_url}/commit/${commitSha})\n\n` +
+              `**Failed Jobs:**\n${failedJobs}\n\n` +
+              `[View full run](${runUrl})`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: comment
+            });
+            
+            console.log('Comment added to issue successfully');
+
