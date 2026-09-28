@@ -54,7 +54,7 @@ jobs:
             ### Failed Jobs
             ${failedJobsList}
 
-            [View full workflow run](${workflowRun.html_url})`;
+            [View full workflow run](${workflowRun.html_url}?attempt=${workflowRun.run_attempt})`;
 
             // Post the comment
             await github.rest.issues.createComment({
