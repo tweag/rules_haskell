@@ -57,13 +57,20 @@ jobs:
             [View full workflow run](${workflowRun.html_url}?attempt=${workflowRun.run_attempt})`;
 
             // Post the comment
-            await github.rest.issues.createComment({
+            const commentResponse = await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: parseInt(issueNumber),
               body: comment,
             });
 
+            const commentId = commentResponse.data.id;
+            const commentUrl = `${context.payload.repository.html_url}/issues/${issueNumber}#issuecomment-${commentId}`;
+
+            const summary = `${comment}
+
+            See ${commentUrl}`;
+            
             // Append the comment to the summary as well
-            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, comment);
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
 
