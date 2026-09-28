@@ -35,6 +35,10 @@ common --enable_platform_specific_config
 # do not use Xcode on macOS
 common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 
+# abseil-cpp uses clock_gettime unguarded, which requires macOS >= 10.12
+common:macos --macos_minimum_os=10.12
+common:macos --host_macos_minimum_os=10.12
+
 # Windows Configuration
 # ---------------------
 # prevent auto-detection of system compilers on Windows

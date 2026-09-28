@@ -68,17 +68,17 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_cc",
-        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.1.1/rules_cc-0.1.1.tar.gz"],
-        sha256 = "712d77868b3152dd618c4d64faaddefcc5965f90f5de6e6dd1d5ddcd0be82d42",
-        strip_prefix = "rules_cc-0.1.1",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.2.9/rules_cc-0.2.9.tar.gz"],
+        integrity = "sha256-ac60VLmyngq6fagcculuyv2B0gRL6IO0Y5ixx3yn//k=",
+        strip_prefix = "rules_cc-0.2.9",
     )
 
     maybe(
         http_archive,
         name = "rules_java",
-        sha256 = "976ef08b49c929741f201790e59e3807c72ad81f428c8bc953cdbeff5fed15eb",
+        integrity = "sha256-xbwX4Xu2IpCx/Y/dhHojltNFnzN6fgfad2m4abSI7CY=",
         urls = [
-            "https://github.com/bazelbuild/rules_java/releases/download/7.4.0/rules_java-7.4.0.tar.gz",
+            "https://github.com/bazelbuild/rules_java/releases/download/8.6.1/rules_java-8.6.1.tar.gz",
         ],
     )
 
@@ -156,26 +156,20 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "7c3ebd7aaedd86fa5dc479a0fda803f602caaf78d8aff7ce83b89e1b8ae7442a",
-        strip_prefix = "protobuf-28.3",
+        integrity = "sha256-VU6EfkbHBb/ET7LQrlv3jzQ5X8v9hrp0czi1cO7yZ3E=",
+        strip_prefix = "protobuf-31.1",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v28.3.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protobuf-31.1.zip",
         ],
-        patches = [
-            # see https://github.com/protocolbuffers/protobuf/issues/16844
-            # TODO: remove for protobuf version >= 31.0
-            "@rules_haskell//haskell:private/com_google_protobuf-protoc-dbghlp.diff",
-        ],
-        patch_args = ["-p1"],
     )
     maybe(
         http_archive,
         name = "com_google_absl",
         urls = [
-            "https://github.com/abseil/abseil-cpp/releases/download/20240116.3/abseil-cpp-20240116.3.tar.gz",
+            "https://github.com/abseil/abseil-cpp/releases/download/20260107.1/abseil-cpp-20260107.1.tar.gz",
         ],
-        sha256 = "e887b423da5a1ba66e71610094fd7147ff2febfedccdfbf00f2c644ac21adf83",
-        strip_prefix = "abseil-cpp-20240116.3",
+        integrity = "sha256-QxTip8usicrCWi8jIocPND2BV5dWzv9/QxgDwskJAZU=",
+        strip_prefix = "abseil-cpp-20260107.1",
     )
 
     maybe(
