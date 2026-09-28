@@ -16,7 +16,7 @@ rules_haskell_dependencies()
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
-GHC_VERSION = "9.4.8"
+GHC_VERSION = "9.6.7"
 
 haskell_register_ghc_nixpkgs(
     attribute_path = "haskell.compiler.ghc{}".format(GHC_VERSION.replace(".", "")),
