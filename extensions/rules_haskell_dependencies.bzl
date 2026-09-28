@@ -2,25 +2,10 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies_bzlmod")
 load("@rules_haskell//tools:os_info.bzl", "os_info")
 load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencies")
 load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
-
-def _empty_repo_impl(rctx):
-    fail(rctx.attr.error_msg)
-
-_empty_repo = repository_rule(
-    implementation = _empty_repo_impl,
-    doc = """A dummy repository that can be loaded from the MODULE.bazel file but not fetched.""",
-    attrs = {
-        "error_msg": attr.string(
-            doc = "The error message displayed if the repository is fetched",
-            mandatory = True,
-        ),
-    },
-)
 
 def repositories(*, bzlmod):  # @unused
     rules_haskell_dependencies_bzlmod()
@@ -37,15 +22,7 @@ def repositories(*, bzlmod):  # @unused
     # selected toolchain.
     rules_haskell_worker_dependencies()
 
-    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-    # See https://github.com/tweag/rules_haskell/issues/1871
-
-    if GHC_VERSION and is_at_least("9.6", GHC_VERSION):
-        _empty_repo(
-            name = "Cabal",
-            error_msg = "When using GHC >= 9.6, do not depend on @Cabal, as https://github.com/tweag/rules_haskell/issues/1871 is fixed.",
-        )
-    elif GHC_VERSION and GHC_VERSION.startswith("9.4."):
+    if GHC_VERSION and GHC_VERSION.startswith("9.4."):
         http_archive(
             name = "Cabal",
             build_file_content = """
@@ -71,13 +48,13 @@ haskell_cabal_library(
     name = "Cabal",
     srcs = glob(["Cabal/**"]),
     verbose = False,
-    version = "3.6.3.0",
+    version = "3.10.3.0",
     visibility = ["//visibility:public"],
 )
 """,
-            sha256 = "f69b46cb897edab3aa8d5a4bd7b8690b76cd6f0b320521afd01ddd20601d1356",
-            strip_prefix = "cabal-gg-8220-with-3630",
-            urls = ["https://github.com/tweag/cabal/archive/refs/heads/gg/8220-with-3630.zip"],
+            sha256 = "be8460bde59089b99caa6d6f4ae3bbf6f92019c8634aad3d7edc5134a642bb24",
+            strip_prefix = "cabal-Cabal-v3.10.3.0",
+            urls = ["https://github.com/haskell/cabal/archive/refs/tags/Cabal-v3.10.3.0.zip"],
         )
 
 def _rules_haskell_dependencies_impl(_mctx):
