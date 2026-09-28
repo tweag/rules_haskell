@@ -141,27 +141,27 @@ use_repo(npm, "rules_haskell_npm")
 #### Development dependencies ####
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.13.0",
+    version = "0.14.0",
     dev_dependency = True,
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.13.0",
+    version = "0.14.0",
     dev_dependency = True,
 )
 bazel_dep(
     name = "rules_nixpkgs_python",
-    version = "0.13.0",
+    version = "0.14.0",
     dev_dependency = True,
 )
 bazel_dep(
     name = "rules_nixpkgs_go",
-    version = "0.13.0",
+    version = "0.14.0",
     dev_dependency = True,
 )
 bazel_dep(
     name = "rules_nixpkgs_posix",
-    version = "0.13.0",
+    version = "0.14.0",
     dev_dependency = True,
 )
 bazel_dep(
