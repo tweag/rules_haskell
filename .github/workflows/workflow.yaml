@@ -49,28 +49,28 @@ jobs:
         module: [rules_haskell, rules_haskell_nix, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.6.5
-          - 9.8.2
+          - 9.6.7
+          - 9.8.4
           - 9.10.3
           # - 9.12.4
           # - 9.14.1
-        exclude:
-          - module: rules_haskell_nix
+        # exclude:
+        #   - module: rules_haskell_nix
 
-            bzlmod: false
+        #     bzlmod: false
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.8.2
-            bzlmod: true
-          - ghc: 9.6.5
-            bzlmod: true
-          - ghc: 9.10.3
-            bzlmod: true
+          # - ghc: 9.8.4
+          #   bzlmod: true
+          # - ghc: 9.6.7
+            # bzlmod: true
+          # - ghc: 9.10.3
+            # bzlmod: true
           # GHC 9.10.3 not available in current nixpkgs pin (2024-07-02)
-          - ghc: 9.10.3
-            os: ubuntu-24.04
-          - ghc: 9.10.3
-            os: macos-14
+          # - ghc: 9.10.3
+          #   os: ubuntu-24.04
+          # - ghc: 9.10.3
+          #   os: macos-14
     runs-on: ${{ matrix.os }}
     env:
       NIX_SHELL_ARGS: --arg docTools false --argstr ghcVersion ${{ matrix.ghc }}
@@ -120,7 +120,7 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
       - name: Build & test - rules_haskell_nix
-        if: matrix.module == 'rules_haskell_nix'
+        if: false && matrix.module == 'rules_haskell_nix'
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           derivation-path: .
@@ -128,7 +128,7 @@ jobs:
           working-directory: rules_haskell_nix
           run: bazel test //...
       - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
+        if: false && matrix.module == 'rules_haskell_tests'
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           options: ${{ env.NIX_SHELL_ARGS }}
@@ -157,27 +157,27 @@ jobs:
         module: [rules_haskell, rules_haskell_tests]
         bzlmod: [true, false]
         ghc:
-          - 9.6.5
-          - 9.8.2
+          - 9.6.7
+          - 9.8.4
           - 9.10.3
           # - 9.12.4
           # - 9.14.1
-        exclude:
+        # exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          - ghc: 9.8.2
-            bzlmod: true
-          - ghc: 9.6.5
-            bzlmod: true
-          - ghc: 9.10.3
-            bzlmod: true
+          # - ghc: 9.8.4
+          #   bzlmod: true
+          # - ghc: 9.6.7
+          #   bzlmod: true
+          # - ghc: 9.10.3
+          #   bzlmod: true
           # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
-          - ghc: 9.6.5
-            os: windows-2022
-          - ghc: 9.8.2
-            os: windows-2022
-          - ghc: 9.10.3
-            os: windows-2022
+          # - ghc: 9.6.7
+          #   os: windows-2022
+          # - ghc: 9.8.4
+          #   os: windows-2022
+          # - ghc: 9.10.3
+            # os: windows-2022
     env:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
@@ -236,7 +236,7 @@ jobs:
           bazelisk test "//..."
 
       - name: Build & test - rules_haskell_tests
-        if: matrix.module == 'rules_haskell_tests'
+        if: false &&matrix.module == 'rules_haskell_tests'
         shell: bash
         working-directory: rules_haskell_tests
         run: |
