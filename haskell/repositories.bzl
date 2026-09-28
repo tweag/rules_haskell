@@ -212,7 +212,7 @@ def rules_haskell_dependencies():
         name = "rules_pkg",
         urls = [
             "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/1.2.0/rules_pkg-1.2.0.tar.gz",
-            "https://github.com/bazelbuild/rules_pkg/releases/download/1.2.0/rules_pkg-1.2.0.tar.gz",
+            "https://github.com/bazelbuild/rules_pkg/releases/download/1.3/rules_pkg-1.2.0.tar.gz",
         ],
         sha256 = "b5c9184a23bb0bcff241981fd9d9e2a97638a1374c9953bb1808836ce711f990",
     )
