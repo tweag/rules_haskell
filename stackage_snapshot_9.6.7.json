@@ -1,6 +1,6 @@
 {
-  "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": -262478135,
-  "all-cabal-hashes": "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/37b65cb142a43e06cb9bee902ae26c5179784442",
+  "__GENERATED_FILE_DO_NOT_MODIFY_MANUALLY": 2105539583,
+  "all-cabal-hashes": "https://raw.githubusercontent.com/commercialhaskell/all-cabal-hashes/edff0f277a108b481698ee51ba67147c49c7f09c",
   "resolved": {
     "Cabal": {"dependencies":[],"location":{"type":"core"},"name":"Cabal","version":"3.10.3.0"},
     "StateVar": {"dependencies":["base","stm","transformers"],"location":{"type":"hackage","url":"https://hackage.haskell.org/package/StateVar-1.2.2/StateVar-1.2.2.tar.gz"},"name":"StateVar","pinned":{"cabal-sha256":"3c022c00485fe165e3080d5da6b3ca9c9b02f62c5deebc584d1b3d1309ce673e","sha256":"5e4b39da395656a59827b0280508aafdc70335798b50e5d6fd52596026251825","url":["https://hackage.haskell.org/package/StateVar-1.2.2/StateVar-1.2.2.tar.gz","https://s3.amazonaws.com/hackage.fpcomplete.com/package/StateVar-1.2.2.tar.gz"]},"version":"1.2.2"},
