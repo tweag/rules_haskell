@@ -161,19 +161,24 @@ jobs:
           # - 9.12.4
           # - 9.14.1
         exclude:
-          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
-          #       and stack config per GHC version
+          # TODO: We don't have an easy way to change the GHC version when using bzlmod,
+          #  unlike without it, where we can just use the GHC_VERSION env var.
           - ghc: 9.8.4
             bzlmod: true
           - ghc: 9.10.3
             bzlmod: true
           # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
-          # - ghc: 9.6.7
-          #   os: windows-2022
-          # - ghc: 9.8.4
-          #   os: windows-2022
-          # - ghc: 9.10.3
-            # os: windows-2022
+          # TODO(axman6): These fail with:
+          # <no location info>: error:
+          #     Warning: Couldn't figure out C compiler information!
+          #              Make sure you're using GNU gcc, or clang
+          # LAUNCHER ERROR: Rlocation failed on _main/haskell/cc_wrapper-bash, path doesn't exist in MANIFEST file
+          - ghc: 9.6.7
+            os: windows-2022
+          - ghc: 9.8.4
+            os: windows-2022
+          - ghc: 9.10.3
+            os: windows-2022
     env:
       GHC_VERSION: ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
