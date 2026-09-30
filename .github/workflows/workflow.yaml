@@ -54,18 +54,16 @@ jobs:
           - 9.10.3
           # - 9.12.4
           # - 9.14.1
-        # exclude:
+        exclude:
         #   - module: rules_haskell_nix
 
         #     bzlmod: false
-          # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
-          #       and stack config per GHC version
-          # - ghc: 9.8.4
-          #   bzlmod: true
-          # - ghc: 9.6.7
-            # bzlmod: true
-          # - ghc: 9.10.3
-            # bzlmod: true
+          # TODO: We don't have an easy way to change the GHC version when using bzlmod,
+          #  unlike without it, where we can just use the GHC_VERSION env var.
+          - ghc: 9.8.4
+            bzlmod: true
+          - ghc: 9.10.3
+            bzlmod: true
           # GHC 9.10.3 not available in current nixpkgs pin (2024-07-02)
           # - ghc: 9.10.3
           #   os: ubuntu-24.04
@@ -162,15 +160,13 @@ jobs:
           - 9.10.3
           # - 9.12.4
           # - 9.14.1
-        # exclude:
+        exclude:
           # TODO: in a MODULE.bazel file we declare version specific dependencies, would need to use stack snapshot json
           #       and stack config per GHC version
-          # - ghc: 9.8.4
-          #   bzlmod: true
-          # - ghc: 9.6.7
-          #   bzlmod: true
-          # - ghc: 9.10.3
-          #   bzlmod: true
+          - ghc: 9.8.4
+            bzlmod: true
+          - ghc: 9.10.3
+            bzlmod: true
           # currently proto-lens-protoc (read: protoc-gen-haskell) fails with an access violation on Windows
           # - ghc: 9.6.7
           #   os: windows-2022
