@@ -62,7 +62,7 @@ cc_compatibility_proxy_repo()
 
 # rules_java's compatibility_proxy repo, normally set up by its module extension under bzlmod.
 # Needed before rules_proto, which loads @rules_java//java/private:proto_support.bzl transitively.
-load("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy_repo")
+load("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy_repo", "rules_java_dependencies")
 
 compatibility_proxy_repo()
 
@@ -74,7 +74,7 @@ load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 
 rules_proto_toolchains()
 
-load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_java_toolchains")
+load("@rules_java//java:repositories.bzl", "rules_java_toolchains")
 
 rules_java_dependencies()
 
