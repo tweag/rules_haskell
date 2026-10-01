@@ -73,24 +73,6 @@ haskell_cabal_library(
         urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
     )
 
-    # TODO: Remove when tests are run with a ghc version containing Cabal >= 3.10
-    # See https://github.com/tweag/rules_haskell/issues/1871
-    http_archive(
-        name = "Cabal",
-        build_file_content = """
-load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
-haskell_cabal_library(
-    name = "Cabal",
-    srcs = glob(["Cabal/**"]),
-    verbose = False,
-    version = "3.8.1.0",
-    visibility = ["//visibility:public"],
-)
-""",
-        sha256 = "b697b558558f351d2704e520e7dcb1f300cd77fea5677d4b2ee71d0b965a4fe9",
-        strip_prefix = "cabal-ghc-9.4-paths-module-relocatable",
-        urls = ["https://github.com/tweag/cabal/archive/refs/heads/ghc-9.4-paths-module-relocatable.zip"],
-    )
 
 def _non_module_deps_impl(_ctx):
     repositories(bzlmod = True)
