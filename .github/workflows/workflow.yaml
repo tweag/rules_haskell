@@ -38,7 +38,8 @@ jobs:
           common --config=ci
           EOF
       - run: |
-          bazelisk test buildifier:buildifier_test
+          # TODO(axman6): remove bzlmod flag once rules_nixpkgs 0.14.1 released
+          bazelisk test --enable_bzlmod=false buildifier:buildifier_test
 
   test-nixpkgs:
     name: Build & Test - Nixpkgs
