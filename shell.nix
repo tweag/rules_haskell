@@ -1,7 +1,7 @@
 {
   pkgs ? import ./nixpkgs { },
   docTools ? true,
-  ghcVersion ? "9.6.5",
+  ghcVersion ? "9.6.7",
 }:
 
 with pkgs;
@@ -21,7 +21,7 @@ mkShell {
   LANG = "C.UTF-8";
 
   buildInputs = [
-    go
+    go_1_25
     nix
     which
     perl
