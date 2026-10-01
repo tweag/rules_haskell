@@ -164,7 +164,7 @@ def rules_haskell_dependencies():
     )
     maybe(
         http_archive,
-        name = "com_google_absl",
+        name = "abseil-cpp",
         urls = [
             "https://github.com/abseil/abseil-cpp/releases/download/20260107.1/abseil-cpp-20260107.1.tar.gz",
         ],
