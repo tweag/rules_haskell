@@ -49,7 +49,7 @@ nix_haskell_toolchains = use_extension(
     "nix_haskell_toolchains",
 )
 
-GHC_VERSION = "9.4.8"
+GHC_VERSION = "9.6.7"
 
 # Declare a default nix-based toolchain
 nix_haskell_toolchains.new(
