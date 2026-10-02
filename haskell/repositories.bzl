@@ -85,9 +85,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "94750828b18044533e98a129003b6a68001204038dc4749f40b195b24c38f49f",
-        strip_prefix = "rules_python-0.21.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.21.0/rules_python-0.21.0.tar.gz",
+        sha256 = "a535712f12ba25253d73975ba2932994b5e53773f94b58fb3f8fa7827de8b6b7",
+        strip_prefix = "rules_python-2.3.4",
+        url = "https://github.com/bazelbuild/rules_python/releases/download/2.3.4/rules_python-2.3.4.tar.gz",
     )
 
     maybe(
