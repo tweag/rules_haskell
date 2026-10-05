@@ -119,7 +119,7 @@ jobs:
             bazel build //docs:api_html
             bazel build //docs:guide_html
       - name: Build & test - rules_haskell_nix
-        if: false && matrix.module == 'rules_haskell_nix'
+        if: matrix.module == 'rules_haskell_nix'
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           derivation-path: .
