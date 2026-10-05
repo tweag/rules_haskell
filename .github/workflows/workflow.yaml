@@ -56,9 +56,9 @@ jobs:
           # - 9.12.4
           # - 9.14.1
         exclude:
-        #   - module: rules_haskell_nix
+          - module: rules_haskell_nix
+            bzlmod: false
 
-        #     bzlmod: false
           # TODO: We don't have an easy way to change the GHC version when using bzlmod,
           #  unlike without it, where we can just use the GHC_VERSION env var.
           - ghc: 9.8.4
