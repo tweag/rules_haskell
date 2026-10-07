@@ -14,6 +14,25 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+bazel_features_deps()
+
+http_archive(
+    name = "proto_bazel_features",
+    sha256 = "89eca73d4c334cf664f84920365d2ce04e2c98099b89f7c5b676b5f377c8e754",
+    strip_prefix = "bazel_features-1.48.1",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.48.1/bazel_features-v1.48.1.tar.gz",
+)
+
+load("@rules_cc//cc:extensions.bzl", cc_compatibility_proxy_repo = "compatibility_proxy_repo")
+load("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy_repo")
+
+cc_compatibility_proxy_repo()
+
+compatibility_proxy_repo()
+
 load("//:non_module_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
@@ -22,8 +41,6 @@ load("@rules_haskell//tools:repositories.bzl", "rules_haskell_worker_dependencie
 
 # For persistent worker (tools/worker)
 rules_haskell_worker_dependencies()
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # For testing if bzlmod is enabled
 http_archive(

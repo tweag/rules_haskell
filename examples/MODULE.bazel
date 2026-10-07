@@ -9,7 +9,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.13.0",
+    version = "0.14.0",
 )
 bazel_dep(
     name = "rules_haskell_nix",
@@ -31,7 +31,7 @@ bazel_dep(
 
 bazel_dep(
     name = "rules_cc",
-    version = "0.1.1",
+    version = "0.2.9",
 )
 bazel_dep(
     name = "rules_sh",
@@ -46,7 +46,6 @@ bazel_dep(name = "platforms", version = "1.1.0")
 non_module_deps = use_extension(":non_module_deps.bzl", "non_module_deps")
 use_repo(
     non_module_deps,
-    "Cabal",
     "nixpkgs_config_cc",
     "nixpkgs_config_cc_info",
     "nixpkgs_config_cc_toolchains",
@@ -83,13 +82,11 @@ stack_snapshot.package(
 stack_snapshot.package(
     name = "streaming-commons",
     extra_deps = ["@zlib.hs"],
-    setup_deps = ["@Cabal//:Cabal"],
 )
 
 [
     stack_snapshot.package(
-        name = pkg,  # See https://github.com/tweag/rules_haskell/issues/1871
-        setup_deps = ["@Cabal//:Cabal"],
+        name = pkg,
     )
     for pkg in [
         "base",
@@ -100,28 +97,12 @@ stack_snapshot.package(
         "optparse-applicative",
         "text",
         "text-show",
-        # TODO(cb) remove these transitive deps once
-        #          https://github.com/tweag/rules_haskell/issues/1871 is resolved
-        "bifunctors",
-        "call-stack",
-        "generic-deriving",
-        "hspec-core",
-        "hspec-discover",
-        "hspec-expectations",
-        "HUnit",
-        "mono-traversable",
-        "quickcheck-io",
-        "transformers-compat",
-        "typed-process",
-        "unliftio-core",
     ]
 ]
 
 # example for a vendored package
 stack_snapshot.package(
     name = "split",
-    # See https://github.com/tweag/rules_haskell/issues/1871
-    setup_deps = ["@Cabal//:Cabal"],
     vendored = "@split//:split",
 )
 stack_snapshot.package(

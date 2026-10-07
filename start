@@ -352,7 +352,7 @@ EOF
 
 		nixpkgs_cc_configure(
 		    repository = "@nixpkgs",
-		    cc_std = "c++14",
+		    cc_std = "c++17",
 		)
 
 		nixpkgs_python_configure(
