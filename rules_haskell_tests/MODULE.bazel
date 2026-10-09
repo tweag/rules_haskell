@@ -72,8 +72,8 @@ bazel_dep(
     version = "1.42.3",
 )
 bazel_dep(
-    name = "aspect_bazel_lib",
-    version = "2.22.5",
+    name = "bazel_lib",
+    version = "3.7.2",
 )
 bazel_dep(
     name = "rules_proto",
