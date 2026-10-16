@@ -5,11 +5,30 @@ module(
 
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.14.0",
+    version = "0.14.1",
 )
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.13.0",
+    version = "0.14.1",
+)
+archive_override(
+    module_name = "rules_nixpkgs_core",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+archive_override(
+    module_name = "rules_nixpkgs_cc",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/cc",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+# Required by rules_haskell_nix.
+archive_override(
+    module_name = "rules_nixpkgs_posix",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/posix",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
 )
 bazel_dep(
     name = "rules_haskell_nix",

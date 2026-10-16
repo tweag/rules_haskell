@@ -15,5 +15,18 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.14.0",
+    version = "0.14.1",
+)
+archive_override(
+    module_name = "rules_nixpkgs_core",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+# Required by rules_haskell_nix.
+archive_override(
+    module_name = "rules_nixpkgs_posix",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/posix",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
 )
