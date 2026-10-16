@@ -8,8 +8,8 @@ load(
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "0.13.0"
-_rules_nixpkgs_sha256 = "30271f7bd380e4e20e4d7132c324946c4fdbc31ebe0bbb6638a0f61a37e74397"
+_rules_nixpkgs_version = "0.14.1"
+_rules_nixpkgs_sha256 = "54025689367205b835198677e686d8208b570bfd84e6872684ae657747673b97"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
@@ -76,9 +76,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_java",
-        sha256 = "976ef08b49c929741f201790e59e3807c72ad81f428c8bc953cdbeff5fed15eb",
+        sha256 = "c5bc17e17bb62290b1fd8fdd847a2396d3459f337a7e07da7769b869b488ec26",
         urls = [
-            "https://github.com/bazelbuild/rules_java/releases/download/7.4.0/rules_java-7.4.0.tar.gz",
+            "https://github.com/bazelbuild/rules_java/releases/download/8.6.1/rules_java-8.6.1.tar.gz",
         ],
     )
 
@@ -134,8 +134,9 @@ def rules_haskell_dependencies():
         # required by rules_nixpkgs
         http_archive(
             name = "rules_nodejs",
-            sha256 = "0c2277164b1752bb71ecfba3107f01c6a8fb02e4835a790914c71dfadcf646ba",
-            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.5/rules_nodejs-core-5.8.5.tar.gz"],
+            sha256 = "732aa2aeef9ba629cd7fa1cb30da07e6b696ed78706b08d84d5d8601982f38b1",
+            strip_prefix = "rules_nodejs-6.3.3",
+            urls = ["https://github.com/bazel-contrib/rules_nodejs/releases/download/v6.3.3/rules_nodejs-v6.3.3.tar.gz"],
         )
 
         http_archive(
@@ -151,15 +152,19 @@ def rules_haskell_dependencies():
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
                 urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
+                # rules_go >= 0.57.0 requires a `pack` tool on go_toolchain.
+                # See https://github.com/tweag/rules_nixpkgs/issues/667
+                patches = ["@rules_haskell//haskell:private/rules_nixpkgs_go-pack.diff"] if toolchain == "go" else [],
+                patch_args = ["-p1"],
             )
 
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "7c3ebd7aaedd86fa5dc479a0fda803f602caaf78d8aff7ce83b89e1b8ae7442a",
-        strip_prefix = "protobuf-28.3",
+        sha256 = "10a0d58f39a1a909e95e00e8ba0b5b1dc64d02997f741151953a2b3659f6e78c",
+        strip_prefix = "protobuf-29.0",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v28.3.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v29.0.tar.gz",
         ],
         patches = [
             # see https://github.com/protocolbuffers/protobuf/issues/16844
@@ -181,9 +186,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "aspect_rules_js",
-        sha256 = "2cfb3875e1231cefd3fada6774f2c0c5a99db0070e0e48ea398acbff7c6c765b",
-        strip_prefix = "rules_js-1.42.3",
-        url = "https://github.com/aspect-build/rules_js/releases/download/v1.42.3/rules_js-v1.42.3.tar.gz",
+        sha256 = "1774702556e1d0b83b7f5eb58ec95676afe6481c62596b53f5b96575bacccf73",
+        strip_prefix = "rules_js-2.9.2",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v2.9.2/rules_js-v2.9.2.tar.gz",
     )
 
     rules_haskell_dependencies_bzlmod()
