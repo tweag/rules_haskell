@@ -9,7 +9,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_java",
-    version = "7.4.0",
+    version = "8.6.1",
 )
 bazel_dep(
     name = "rules_license",
@@ -21,7 +21,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "protobuf",
-    version = "27.0",
+    version = "29.0",
     repo_name = "com_google_protobuf",
 )
 
@@ -36,7 +36,7 @@ single_version_override(
 
 bazel_dep(
     name = "rules_cc",
-    version = "0.0.15",
+    version = "0.1.5",
 )
 bazel_dep(
     name = "rules_nodejs",
@@ -56,7 +56,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_proto",
-    version = "5.3.0-21.7",
+    version = "7.0.2",
 )
 bazel_dep(
     name = "aspect_rules_js",
@@ -172,7 +172,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "stardoc",
-    version = "0.6.2",
+    version = "0.7.2",
     dev_dependency = True,
     repo_name = "io_bazel_stardoc",
 )
