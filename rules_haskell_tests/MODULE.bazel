@@ -35,6 +35,13 @@ bazel_dep(
     name = "rules_nixpkgs_go",
     version = "0.13.0",
 )
+single_version_override(
+    module_name = "rules_nixpkgs_go",
+    patch_strip = 1,
+    # rules_go >= 0.57.0 requires a `pack` tool on go_toolchain.
+    # See https://github.com/tweag/rules_nixpkgs/issues/667
+    patches = ["//:patches/rules_nixpkgs_go-pack.diff"],
+)
 bazel_dep(
     name = "rules_nixpkgs_posix",
     version = "0.13.0",

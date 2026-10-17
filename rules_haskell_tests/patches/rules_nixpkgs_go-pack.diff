@@ -1,0 +1,90 @@
+--- a/go.bzl
++++ b/go.bzl
+@@ -18,6 +18,15 @@
+ 
+ RULES_GO = "rules_go" if _is_bzlmod_enabled() else "io_bazel_rules_go"
+ 
++def _rules_go_needs_pack(repository_ctx):
++    """Whether rules_go's go_toolchain has a mandatory `pack` attribute (rules_go >= 0.57.0).
++
++    RULES_GO_VERSION is not reliable for this (it is stuck at 0.50.0), so look for the attribute.
++    See https://github.com/tweag/rules_nixpkgs/issues/667
++    """
++    go_toolchain_bzl = repository_ctx.read(Label("@io_bazel_rules_go//go/private:go_toolchain.bzl"))
++    return '"pack": attr.label(' in go_toolchain_bzl
++
+ def _detect_host_platform(ctx):
+     """Copied from `rules_go`, since we have no other way to determine the proper `goarch` value.
+     https://github.com/bazelbuild/rules_go/blob/728a9e1874bc965b05c415d7f6b332a86ac35102/go/private/sdk.bzl#L239
+@@ -70,6 +79,19 @@
+ 
+ go_helpers_build = """
+ load("@{rules_go}//go:def.bzl", "go_sdk")
++load("@{rules_go}//go/private/rules:binary.bzl", "go_tool_binary")
++load("@{rules_go}//go/private/rules:transition.bzl", "non_go_reset_target")
++
++def go_builder(name, **kwargs):
++    if {needs_pack}:
++        kwargs["out_pack"] = "pack.exe"
++    go_tool_binary(name = name, **kwargs)
++    if {needs_pack}:
++        # go_toolchain's `pack` must be an executable target, not a generated file.
++        non_go_reset_target(
++            name = "pack_reset",
++            dep = ":pack.exe",
++        )
+ 
+ def go_sdk_for_arch(go_version):
+     native.filegroup(
+@@ -104,6 +126,7 @@
+         goos = goos,
+         goarch = goarch,
+         exe = ".exe" if goos == "windows" else "",
++        needs_pack = _rules_go_needs_pack(repository_ctx),
+     )
+     repository_ctx.file("go_sdk.bzl", executable = False, content = content)
+ 
+@@ -132,6 +155,9 @@
+         toolchain_name = "toolchain_go_" + p.name
+         impl_name = toolchain_name + "-impl"
+         constraints = p.constraints
++        extra_attrs = dict()
++        if {needs_pack}:
++            extra_attrs["pack"] = "@{sdk_repo}//:pack_reset"
+         go_toolchain(
+             name = impl_name,
+             goos = p.goos,
+@@ -141,6 +167,7 @@
+             link_flags = link_flags,
+             cgo_link_flags = cgo_link_flags,
+             visibility = ["//visibility:public"],
++            **extra_attrs
+         )
+         native.toolchain(
+             name = toolchain_name,
+@@ -184,6 +211,7 @@
+         rules_go = repository_ctx.attr.rules_go_repo_name,
+         sdk_repo = repository_ctx.attr.sdk_repo,
+         PLATFORMS = CANONICALIZED_PLATFORMS,
++        needs_pack = _rules_go_needs_pack(repository_ctx),
+     )
+     build_content = go_toolchain_build.format(
+         goos = goos,
+@@ -212,7 +240,7 @@
+ load("@{rules_go}//go/private/rules:binary.bzl", "go_tool_binary")
+ load("@{rules_go}//go/private/rules:sdk.bzl", "package_list")
+ load("@{rules_go}//go:def.bzl", "go_sdk", "RULES_GO_VERSION")
+-load("@{helpers}//:go_sdk.bzl", "go_sdk_for_arch")
++load("@{helpers}//:go_sdk.bzl", "go_builder", "go_sdk_for_arch")
+ load(":go_version.bzl", "go_version")
+ 
+ package(default_visibility = ["//visibility:public"])
+@@ -239,7 +267,7 @@
+     srcs = glob(["pkg/tool/**", "bin/gofmt*"])
+ )
+ 
+-go_tool_binary(
++go_builder(
+     name = "builder",
+     srcs = ["@{rules_go}//go/tools/builders:builder_srcs"],
+     ldflags = "-X main.rulesGoStdlibPrefix=@{rules_go}//stdlib:" if TOOL_BINARY_NEEDS_STDLIB_PREFIX else None,

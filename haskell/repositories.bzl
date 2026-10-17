@@ -151,6 +151,10 @@ def rules_haskell_dependencies():
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
                 urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
+                # rules_go >= 0.57.0 requires a `pack` tool on go_toolchain.
+                # See https://github.com/tweag/rules_nixpkgs/issues/667
+                patches = ["@rules_haskell//haskell:private/rules_nixpkgs_go-pack.diff"] if toolchain == "go" else [],
+                patch_args = ["-p1"],
             )
 
     maybe(
