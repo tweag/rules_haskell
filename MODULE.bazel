@@ -40,7 +40,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nodejs",
-    version = "5.8.3",
+    version = "6.3.3",
 )
 bazel_dep(
     name = "rules_python",
@@ -140,36 +140,68 @@ use_repo(npm, "rules_haskell_npm")
 #### Development dependencies ####
 bazel_dep(
     name = "rules_nixpkgs_core",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
 )
+archive_override(
+    module_name = "rules_nixpkgs_core",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+
 bazel_dep(
     name = "rules_nixpkgs_cc",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
 )
+archive_override(
+    module_name = "rules_nixpkgs_cc",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/cc",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+
 bazel_dep(
     name = "rules_nixpkgs_python",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
 )
+archive_override(
+    module_name = "rules_nixpkgs_python",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/python",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+
 bazel_dep(
     name = "rules_nixpkgs_go",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
 )
-single_version_override(
+archive_override(
     module_name = "rules_nixpkgs_go",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
     patch_strip = 1,
     # rules_go >= 0.57.0 requires a `pack` tool on go_toolchain.
     # See https://github.com/tweag/rules_nixpkgs/issues/667
     patches = ["//haskell:private/rules_nixpkgs_go-pack.diff"],
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/go",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
 )
+
 bazel_dep(
     name = "rules_nixpkgs_posix",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
 )
+archive_override(
+    module_name = "rules_nixpkgs_posix",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/posix",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+
 bazel_dep(
     name = "stardoc",
     version = "0.7.2",
@@ -178,8 +210,14 @@ bazel_dep(
 )
 bazel_dep(
     name = "rules_nixpkgs_nodejs",
-    version = "0.13.0",
+    version = "0.14.1",
     dev_dependency = True,
+)
+archive_override(
+    module_name = "rules_nixpkgs_nodejs",
+    integrity = "sha256-VAJWiTZyBbg1GYZ35obYIItXC/2E5ocmhK5ld0dnO5c=",
+    strip_prefix = "rules_nixpkgs-0.14.1/toolchains/nodejs",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
 )
 
 non_module_dev_deps = use_extension(
