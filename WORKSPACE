@@ -40,6 +40,11 @@ load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
 
+load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
+
+# The nodejs toolchain is registered by asterius_dependencies_{bindist,nix} below.
+rules_js_register_toolchains(register_nodejs_toolchain = False)
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
