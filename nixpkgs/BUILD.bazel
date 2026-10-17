@@ -4,3 +4,5 @@ filegroup(
     srcs = glob(["**"]),
     visibility = ["//visibility:public"],
 )
+
+exports_files(["go.nix"])

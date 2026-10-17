@@ -266,7 +266,7 @@ bazel_dep(
 
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.download(
-    version = "1.19.7",
+    version = "1.25.0",
 )
 
 bazel_dep(
