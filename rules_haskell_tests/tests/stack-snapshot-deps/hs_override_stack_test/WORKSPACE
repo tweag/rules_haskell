@@ -16,6 +16,10 @@ load("@com_google_protobuf//bazel/private:proto_bazel_features.bzl", "proto_baze
 
 proto_bazel_features(name = "proto_bazel_features")
 
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
 
 rules_java_dependencies()

@@ -204,7 +204,7 @@ archive_override(
 
 bazel_dep(
     name = "stardoc",
-    version = "0.7.2",
+    version = "0.8.1",
     dev_dependency = True,
     repo_name = "io_bazel_stardoc",
 )
