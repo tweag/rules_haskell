@@ -3,6 +3,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(":private/ghc_ci.bzl", "ghc_default_version")
+load(":private/host_platform.bzl", "host_platform_repo")
 load(
     ":private/versions.bzl",
     "check_bazel_version_compatible",
@@ -45,6 +46,12 @@ def rules_haskell_dependencies():
             "https://github.com/bazelbuild/platforms/releases/download/1.1.0/platforms-1.1.0.tar.gz",
         ],
         sha256 = "dbad4a23abcca6171e47b79edc53bd6a41067a3b75f9e8b104656b459ff25046",
+    )
+
+    # Required by `@platforms//host` under WORKSPACE.
+    maybe(
+        host_platform_repo,
+        name = "host_platform",
     )
 
     maybe(
