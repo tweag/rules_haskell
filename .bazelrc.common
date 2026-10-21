@@ -45,6 +45,9 @@ common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
+# Use the JDK provided by shell.nix (java_tools from rules_java >= 8 require JDK >= 17).
+build:nixpkgs --java_runtime_version=local_jdk
+build:nixpkgs --tool_java_runtime_version=local_jdk
 
 # Build and Test Filters
 # ----------------------
