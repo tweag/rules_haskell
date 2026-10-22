@@ -1,6 +1,7 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
+load("@rules_python//python:repositories.bzl", "py_repositories")
 load(
     "@rules_haskell//:constants.bzl",
     "test_asterius_version",
@@ -53,6 +54,8 @@ test_cabalopts = [
 ] if is_windows else [])
 
 def repositories(*, bzlmod):
+    if not bzlmod:
+        py_repositories()
     nixpkgs_local_repository(
         name = "nixpkgs_default",
         nix_file = "//nixpkgs:default.nix",
