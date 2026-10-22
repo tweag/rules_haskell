@@ -1,7 +1,6 @@
 """ External repositories for the CI that need to be shared between WORKSPACE and MODULE.bazel files """
 
 load("@os_info//:os_info.bzl", "is_linux", "is_windows")
-load("@rules_python//python:repositories.bzl", "py_repositories")
 load(
     "@rules_haskell//:constants.bzl",
     "test_asterius_version",
@@ -19,6 +18,7 @@ load(
 )
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
+load("@rules_python//python:repositories.bzl", "py_repositories")
 load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
 
 test_ghcopts = [
