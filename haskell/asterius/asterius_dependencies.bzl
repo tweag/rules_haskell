@@ -1,6 +1,6 @@
 # Since this module depends on rules_nodejs, documentation using stardoc does not seem to be possible at the moment because of https://github.com/bazelbuild/rules_nodejs/issues/2874.
 
-load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
@@ -58,7 +58,6 @@ npm_repositories()
             name = "rules_haskell_npm",
             pnpm_lock = DEFAULT_PNPM_LOCK,
             verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
-            link_workspace = "rules_haskell",
         )
     _declare_webpack(
         name = "rules_haskell_asterius_webpack",
@@ -99,7 +98,6 @@ npm_repositories()
             name = name + "_npm",
             pnpm_lock = DEFAULT_PNPM_LOCK,
             verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
-            link_workspace = "rules_haskell",
         )
     _ahc_target_build_setting(name = name + "_asterius_build_setting")
 

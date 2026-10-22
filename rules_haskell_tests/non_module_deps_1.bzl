@@ -79,6 +79,8 @@ filegroup(
 
     nixpkgs_go_configure(
         sdk_name = "nixpkgs_go_sdk",
+        # The pinned nixpkgs' Go is too old for rules_go/gazelle.
+        nix_file = "@rules_haskell//nixpkgs:go.nix",
         repository = "@nixpkgs_default",
         register = not bzlmod,
         rules_go_repo_name = "io_bazel_rules_go",
