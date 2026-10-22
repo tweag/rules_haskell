@@ -18,6 +18,7 @@ load(
 )
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
+load("@rules_python//python:repositories.bzl", "py_repositories")
 load("//tests/integration_testing:dependencies.bzl", "integration_testing_bazel_binaries")
 
 test_ghcopts = [
@@ -53,6 +54,8 @@ test_cabalopts = [
 ] if is_windows else [])
 
 def repositories(*, bzlmod):
+    if not bzlmod:
+        py_repositories()
     nixpkgs_local_repository(
         name = "nixpkgs_default",
         nix_file = "//nixpkgs:default.nix",
