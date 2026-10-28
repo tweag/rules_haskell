@@ -1,0 +1,5 @@
+{
+    "integrity": "sha256-/XnW6Botm848+R+rEzCK3wvhlZ1sZ2oXxwmvmLyoAec=",
+    "strip_prefix": "rules_nixpkgs-0.14.0/toolchains/java",
+    "url": "https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.0/rules_nixpkgs-0.14.0.tar.gz"
+}
