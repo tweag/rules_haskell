@@ -11,7 +11,7 @@ on:
     - cron: '1 11 * * *'
 env:
   # Bump this number to invalidate the GH actions cache
-  cache-version: 1
+  cache-version: 2
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
