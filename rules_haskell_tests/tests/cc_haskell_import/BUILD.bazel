@@ -67,6 +67,7 @@ py_binary(
     data = [
         ":hs-lib-b-wrapped.so",
     ],
+    legacy_create_init = 0,
     python_version = "PY3",
     srcs_version = "PY3ONLY",
     # This requires a shared object, which is not provided in profiling mode.
