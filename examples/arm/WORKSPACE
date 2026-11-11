@@ -16,6 +16,16 @@ load(
 
 rules_haskell_dependencies()
 
+load("@rules_cc//cc:repositories.bzl", "rules_cc_dependencies", "rules_cc_toolchains")
+
+rules_cc_dependencies()
+
+rules_cc_toolchains()
+
+load("@rules_cc//cc:extensions.bzl", "compatibility_proxy_repo")
+
+compatibility_proxy_repo()
+
 load(
     "@rules_haskell//haskell:cabal.bzl",
     "stack_snapshot",
