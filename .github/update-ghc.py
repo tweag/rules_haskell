@@ -30,10 +30,10 @@ def get_gitlab_tags_with_prefix(project_id, prefix):
             return tags
         else:
             print(f"Error: unexpected content type: {content_type}", file=sys.stderr)
+            sys.exit(1)
     else:
         print(f"Error: {response.status} - {response.reason}", file=sys.stderr)
-
-    return None
+        sys.exit(1)
 
 
 project_id = "ghc/ghc"
