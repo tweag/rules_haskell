@@ -32,6 +32,8 @@ libraries = {
         "@rules_cc//cc/common",
         "@rules_cc//cc/toolchains:srcs",
         "@rules_java//java:rules",
+        # Missing from protobuf's java_proto_library bzl_library deps.
+        "@rules_java//java/private:proto_support",
         "@rules_shell//shell:rules_bzl",
         "//haskell",
     ],
@@ -41,6 +43,8 @@ libraries = {
         "@rules_cc//cc/common",
         "@rules_cc//cc/toolchains:srcs",
         "@rules_java//java:rules",
+        # Missing from protobuf's java_proto_library bzl_library deps.
+        "@rules_java//java/private:proto_support",
         "//haskell",
     ],
     "cabal": [
@@ -63,6 +67,8 @@ libraries = {
         "@rules_cc//cc/common",
         "@rules_cc//cc/toolchains:srcs",
         "@rules_java//java:rules",
+        # Missing from protobuf's java_proto_library bzl_library deps.
+        "@rules_java//java/private:proto_support",
         "@rules_proto//proto:defs",
         "//haskell",
     ],

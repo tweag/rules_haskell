@@ -268,6 +268,9 @@ sh_test(
         "//tests/cc_haskell_import:python_add_one",
         "@bazel_tools//tools/bash/runfiles",
     ],
+    # GHC's RTS is marked as needing an executable stack (ghc#21478), which
+    # glibc >= 2.41 refuses to grant on dlopen.
+    env = {"GLIBC_TUNABLES": "glibc.rtld.execstack=2"},
     tags = [
         "requires_dynamic",
         "requires_threaded_rts",
