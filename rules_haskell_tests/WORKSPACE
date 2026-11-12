@@ -28,9 +28,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # For testing if bzlmod is enabled
 http_archive(
     name = "bazel_lib",
-    sha256 = "c75f8c375f9f2c73a565dba188f91a4e8d7ca16dd2b6152d3886c26bbf1c6532",
-    strip_prefix = "bazel-lib-3.7.2",
-    url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v3.7.2/bazel-lib-v3.7.2.tar.gz",
+    sha256 = "2a5ab58b8c021f10ce81d354e66ec4822b01188a2fa6c57be15c7381f8911ced",
+    strip_prefix = "bazel-lib-3.8.0",
+    url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v3.8.0/bazel-lib-v3.8.0.tar.gz",
 )
 
 load("@bazel_lib//lib:repositories.bzl", "bazel_lib_dependencies", "register_coreutils_toolchains")
