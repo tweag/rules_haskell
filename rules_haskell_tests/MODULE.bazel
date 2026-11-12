@@ -73,7 +73,7 @@ bazel_dep(
 )
 bazel_dep(
     name = "bazel_lib",
-    version = "3.7.2",
+    version = "3.8.0",
 )
 bazel_dep(
     name = "rules_proto",
