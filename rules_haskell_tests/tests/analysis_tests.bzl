@@ -33,3 +33,42 @@ dynamic_libraries_in_runfiles_test = analysistest.make(
         ),
     },
 )
+
+def _cabal_wrapper_extra_args_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    target_under_test = analysistest.target_under_test(env)
+    args_files = [
+        action.content
+        for action in analysistest.target_actions(env)
+        if action.mnemonic == "FileWrite" and action.outputs.to_list()[0].basename.endswith("_cabal_wrapper_args.json")
+    ]
+    asserts.equals(env, 1, len(args_files), "Expected one cabal_wrapper arguments file for {}.".format(target_under_test.label))
+    if len(args_files) == 1:
+        extra_args = json.decode(args_files[0])["extra_args"]
+        for arg in ctx.attr.contains:
+            asserts.true(
+                env,
+                arg in extra_args,
+                "Expected {} in the Cabal arguments of {}, got {}.".format(arg, target_under_test.label, extra_args),
+            )
+        for arg in ctx.attr.not_contains:
+            asserts.false(
+                env,
+                arg in extra_args,
+                "Expected no {} in the Cabal arguments of {}, got {}.".format(arg, target_under_test.label, extra_args),
+            )
+
+    return analysistest.end(env)
+
+cabal_wrapper_extra_args_test = analysistest.make(
+    _cabal_wrapper_extra_args_test_impl,
+    attrs = {
+        "contains": attr.string_list(
+            doc = "Arguments that the cabal_wrapper extra_args must contain.",
+        ),
+        "not_contains": attr.string_list(
+            doc = "Arguments that the cabal_wrapper extra_args must not contain.",
+        ),
+    },
+)
