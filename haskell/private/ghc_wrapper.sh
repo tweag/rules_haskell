@@ -2,6 +2,12 @@
 set -ueo pipefail
 export PATH=${PATH:-} # otherwise GCC fails on Windows
 
+# GHC runs the cc wrapper and other tools that look up their own runfiles.
+# If this wrapper's runfiles variables leak into them (on Windows the launcher
+# of this script sets them), they search the wrong runfiles tree. Clearing them
+# lets each tool find its own runfiles, as cabal_wrapper.py does.
+unset RUNFILES_DIR RUNFILES_MANIFEST_FILE RUNFILES_MANIFEST_ONLY
+
 drop_loaded_and_warning () {
     # Drop messages that GHC produces on features that we rely upon.
     #
