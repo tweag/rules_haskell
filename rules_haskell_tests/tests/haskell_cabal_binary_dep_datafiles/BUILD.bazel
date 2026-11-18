@@ -1,0 +1,62 @@
+# Check that a haskell_cabal_binary finds the data-files of a
+# haskell_cabal_library dependency through Cabal's own Paths_ module, i.e.
+# without generate_paths_module.
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+    "haskell_cabal_library",
+)
+load("@rules_haskell//haskell:private/versions.bzl", "is_at_least")
+load("@rules_haskell_ghc_version//:ghc_version.bzl", "GHC_VERSION")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_testonly = 1)
+
+haskell_cabal_library(
+    name = "lib-with-data",
+    srcs = [
+        "lib/LibWithData.hs",
+        "lib/datafile",
+        "lib/lib-with-data.cabal",
+    ],
+    # The relocatable Paths_ module of Cabal < 3.10 does not compile, see
+    # https://github.com/tweag/rules_haskell/issues/1871
+    setup_deps = [] if GHC_VERSION and is_at_least("9.6", GHC_VERSION) else ["@Cabal//:Cabal"],
+    tags = [
+        "dont_test_on_windows",
+        "skip_profiling",
+    ],
+    version = "0.1.0.0",
+)
+
+haskell_cabal_binary(
+    name = "bin",
+    srcs = [
+        "bin/Main.hs",
+        "bin/bin.cabal",
+    ],
+    tags = [
+        "dont_test_on_windows",
+        "skip_profiling",
+    ],
+    deps = [":lib-with-data"],
+)
+
+sh_test(
+    name = "test_bin",
+    srcs = [":bin"],
+    tags = [
+        # Data-files of dependencies are not linked next to the binary on
+        # Windows, where Cabal builds are not relocatable.
+        "dont_test_on_windows",
+        "skip_profiling",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
