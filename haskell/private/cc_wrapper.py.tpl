@@ -512,7 +512,11 @@ def shorten_path(input_path):
     shortened = input_path
 
     # Try relativizing to current working directory.
-    rel = os.path.relpath(shortened)
+    try:
+        rel = os.path.relpath(shortened)
+    except ValueError:
+        # On Windows there is no relative path across drives.
+        rel = shortened
     if len(rel) < len(shortened):
         shortened = rel
 
@@ -533,8 +537,9 @@ def shorten_path(input_path):
         real = os.path.relpath(os.path.realpath(shortened))
         if len(real) < len(shortened):
             shortened = real
-    except IOError:
-        # may fail if the path does not exist or on dangling symlinks.
+    except (IOError, ValueError):
+        # may fail if the path does not exist, on dangling symlinks, or on
+        # Windows when the path is on another drive than the working directory.
         pass
 
     return shortened
