@@ -14,6 +14,20 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
+
+# Must be defined before anything loads protobuf's .bzl files (e.g. via
+# @rules_haskell//haskell:cabal.bzl), and is also required by rules_java.
+load("@com_google_protobuf//bazel/private:proto_bazel_features.bzl", "proto_bazel_features")  # buildifier: disable=bzl-visibility
+
+proto_bazel_features(name = "proto_bazel_features")
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load("//:non_module_deps.bzl", "repositories")
 
 repositories(bzlmod = False)
@@ -47,15 +61,20 @@ load("@os_info//:os_info.bzl", "is_nix_shell", "is_windows")
 
 rules_js_dependencies()
 
+load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
+
+# The nodejs toolchain is registered by asterius_dependencies_{bindist,nix} below.
+rules_js_register_toolchains(register_nodejs_toolchain = False)
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
 
 http_archive(
     name = "rules_proto",
-    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
-    strip_prefix = "rules_proto-6.0.2",
-    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
+    sha256 = "0e5c64a2599a6e26c6a03d6162242d231ecc0de219534c38cb4402171def21e8",
+    strip_prefix = "rules_proto-7.0.2",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/7.0.2/rules_proto-7.0.2.tar.gz",
 )
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
@@ -66,19 +85,20 @@ load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 
 rules_proto_toolchains()
 
-load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_java_toolchains")
+load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
 
 rules_java_dependencies()
+
+load("@rules_java//java:repositories.bzl", "rules_java_toolchains")
 
 rules_java_toolchains()
 
 # For buildifier
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "b78f77458e77162f45b4564d6b20b6f92f56431ed59eaaab09e7819d1d850313",
+    sha256 = "c3e253237109ab2e2a8d3cb075688b98a6e6fce43d849849648e8e3a84f20d6f",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.53.0/rules_go-v0.53.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.53.0/rules_go-v0.53.0.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.63.0/rules_go-v0.63.0.zip",
     ],
 )
 
@@ -221,7 +241,7 @@ load(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.2")
+go_register_toolchains(version = "1.25.0")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 

@@ -15,7 +15,7 @@ mkShell {
     which
     perl
     python3
-    jdk11
+    jdk17
     # For stack_install.
     stack
     # Needed for ghcide which expects ghc in PATH.

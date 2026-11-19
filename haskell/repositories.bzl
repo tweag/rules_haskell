@@ -3,13 +3,14 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load(":private/ghc_ci.bzl", "ghc_default_version")
+load(":private/host_platform.bzl", "host_platform_repo")
 load(
     ":private/versions.bzl",
     "check_bazel_version_compatible",
 )
 
-_rules_nixpkgs_version = "0.13.0"
-_rules_nixpkgs_sha256 = "30271f7bd380e4e20e4d7132c324946c4fdbc31ebe0bbb6638a0f61a37e74397"
+_rules_nixpkgs_version = "0.14.1"
+_rules_nixpkgs_sha256 = "54025689367205b835198677e686d8208b570bfd84e6872684ae657747673b97"
 
 _rules_sh_version = "v0.4.0"
 _rules_sh_sha256 = "3243af3fcb3768633fd39f3654de773e5fb61471a2fae5762a1653c22c412d2c"
@@ -47,6 +48,12 @@ def rules_haskell_dependencies():
         sha256 = "dbad4a23abcca6171e47b79edc53bd6a41067a3b75f9e8b104656b459ff25046",
     )
 
+    # Required by `@platforms//host` under WORKSPACE.
+    maybe(
+        host_platform_repo,
+        name = "host_platform",
+    )
+
     maybe(
         http_archive,
         name = "bazel_skylib",
@@ -68,26 +75,26 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "rules_cc",
-        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.1.1/rules_cc-0.1.1.tar.gz"],
-        sha256 = "712d77868b3152dd618c4d64faaddefcc5965f90f5de6e6dd1d5ddcd0be82d42",
-        strip_prefix = "rules_cc-0.1.1",
+        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.1.5/rules_cc-0.1.5.tar.gz"],
+        sha256 = "b8b918a85f9144c01f6cfe0f45e4f2838c7413961a8ff23bc0c6cdf8bb07a3b6",
+        strip_prefix = "rules_cc-0.1.5",
     )
 
     maybe(
         http_archive,
         name = "rules_java",
-        sha256 = "976ef08b49c929741f201790e59e3807c72ad81f428c8bc953cdbeff5fed15eb",
+        sha256 = "c5bc17e17bb62290b1fd8fdd847a2396d3459f337a7e07da7769b869b488ec26",
         urls = [
-            "https://github.com/bazelbuild/rules_java/releases/download/7.4.0/rules_java-7.4.0.tar.gz",
+            "https://github.com/bazelbuild/rules_java/releases/download/8.6.1/rules_java-8.6.1.tar.gz",
         ],
     )
 
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "94750828b18044533e98a129003b6a68001204038dc4749f40b195b24c38f49f",
-        strip_prefix = "rules_python-0.21.0",
-        url = "https://github.com/bazelbuild/rules_python/releases/download/0.21.0/rules_python-0.21.0.tar.gz",
+        sha256 = "0558021abbd244f3e2b51120a7ec4bded37c6cb02c372aaa188da9ba375560d8",
+        strip_prefix = "rules_python-1.8.0",
+        url = "https://github.com/bazel-contrib/rules_python/releases/download/1.8.0/rules_python-1.8.0.tar.gz",
     )
 
     maybe(
@@ -134,8 +141,9 @@ def rules_haskell_dependencies():
         # required by rules_nixpkgs
         http_archive(
             name = "rules_nodejs",
-            sha256 = "0c2277164b1752bb71ecfba3107f01c6a8fb02e4835a790914c71dfadcf646ba",
-            urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.5/rules_nodejs-core-5.8.5.tar.gz"],
+            sha256 = "732aa2aeef9ba629cd7fa1cb30da07e6b696ed78706b08d84d5d8601982f38b1",
+            strip_prefix = "rules_nodejs-6.3.3",
+            urls = ["https://github.com/bazel-contrib/rules_nodejs/releases/download/v6.3.3/rules_nodejs-v6.3.3.tar.gz"],
         )
 
         http_archive(
@@ -151,15 +159,19 @@ def rules_haskell_dependencies():
                 strip_prefix = strip_prefix + "/toolchains/" + toolchain,
                 urls = [rules_nixpkgs_url],
                 sha256 = _rules_nixpkgs_sha256,
+                # rules_go >= 0.57.0 requires a `pack` tool on go_toolchain.
+                # See https://github.com/tweag/rules_nixpkgs/issues/667
+                patches = ["@rules_haskell//haskell:private/rules_nixpkgs_go-pack.diff"] if toolchain == "go" else [],
+                patch_args = ["-p1"],
             )
 
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "7c3ebd7aaedd86fa5dc479a0fda803f602caaf78d8aff7ce83b89e1b8ae7442a",
-        strip_prefix = "protobuf-28.3",
+        sha256 = "10a0d58f39a1a909e95e00e8ba0b5b1dc64d02997f741151953a2b3659f6e78c",
+        strip_prefix = "protobuf-29.0",
         urls = [
-            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v28.3.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v29.0.tar.gz",
         ],
         patches = [
             # see https://github.com/protocolbuffers/protobuf/issues/16844
@@ -181,9 +193,9 @@ def rules_haskell_dependencies():
     maybe(
         http_archive,
         name = "aspect_rules_js",
-        sha256 = "2cfb3875e1231cefd3fada6774f2c0c5a99db0070e0e48ea398acbff7c6c765b",
-        strip_prefix = "rules_js-1.42.3",
-        url = "https://github.com/aspect-build/rules_js/releases/download/v1.42.3/rules_js-v1.42.3.tar.gz",
+        sha256 = "1774702556e1d0b83b7f5eb58ec95676afe6481c62596b53f5b96575bacccf73",
+        strip_prefix = "rules_js-2.9.2",
+        url = "https://github.com/aspect-build/rules_js/releases/download/v2.9.2/rules_js-v2.9.2.tar.gz",
     )
 
     rules_haskell_dependencies_bzlmod()
