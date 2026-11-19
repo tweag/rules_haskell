@@ -132,7 +132,6 @@ npm = use_extension(
 )
 npm.npm_translate_lock(
     name = "rules_haskell_npm",
-    link_workspace = "rules_haskell",
     pnpm_lock = "//haskell/asterius/npm:pnpm-lock.yaml",
     verify_node_modules_ignored = "@rules_haskell//:.bazelignore",
 )
