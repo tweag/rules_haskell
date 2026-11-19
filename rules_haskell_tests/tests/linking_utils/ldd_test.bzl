@@ -13,6 +13,7 @@ def ldd_test(name, elf_binary, script, current_workspace = None, tags = []):
         deps = ["@rules_haskell//debug/linking_utils"],
         data = [elf_binary],
         args = ["{}/$(rootpath {})".format(current_workspace, elf_binary)] if current_workspace else ["$(rootpath {})".format(elf_binary)],
+        legacy_create_init = 0,
         script = """
 from debug.linking_utils.ldd import \\
         dict_remove_empty, identity, const, \\

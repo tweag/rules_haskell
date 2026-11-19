@@ -90,12 +90,14 @@ cc_wrapper(
 
 cabal_wrapper(
     name = "cabal_wrapper",
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 
 py_binary(
     name = "pkgdb_to_bzl",
     srcs = ["private/pkgdb_to_bzl.py"],
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 
@@ -108,6 +110,7 @@ py_library(
 
 runghc(
     name = "runghc",
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 
@@ -120,6 +123,7 @@ sh_binary(
 py_binary(
     name = "version_macros",
     srcs = ["private/version_macros.py"],
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 
@@ -127,6 +131,7 @@ py_binary(
 py_binary(
     name = "gen-ghc-bindist",
     srcs = [":gen_ghc_bindist.py"],
+    legacy_create_init = 0,
     main = ":gen_ghc_bindist.py",
     visibility = ["//visibility:public"],
 )

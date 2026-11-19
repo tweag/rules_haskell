@@ -76,6 +76,7 @@ py_inline_test(
         ":libHSzlib",
         ":libz_soname",
     ],
+    legacy_create_init = 0,
     script = """\
 from python.runfiles import runfiles as bazel_runfiles
 import itertools
