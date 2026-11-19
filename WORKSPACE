@@ -152,7 +152,7 @@ load(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.2")
+go_register_toolchains(version = "1.24.13")
 
 load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_dependencies")
 
