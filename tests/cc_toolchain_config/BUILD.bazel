@@ -1,0 +1,12 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//haskell:cc_toolchain_config.bzl", "cc_toolchain_config")
+
+cc_toolchain_config(
+    name = "config",
+    is_clang = True,
+)
+
+build_test(
+    name = "cc_toolchain_config_test",
+    targets = [":config"],
+)
