@@ -1,0 +1,9 @@
+cabal-version: >=1.10
+name: bin
+version: 0.1.0.0
+build-type: Simple
+
+executable bin
+  build-depends: base, lib-with-data
+  default-language: Haskell2010
+  main-is: Main.hs

@@ -839,6 +839,48 @@ build times, and does not require drafting a `.cabal` file.
 """,
 )
 
+def _link_dep_data_dirs(hs, ctx, cabal, data_dir):
+    """Link the data directories of Cabal library dependencies next to a binary.
+
+    Cabal builds are relocatable on non-Windows platforms, so the Paths_
+    module of a library looks up its data files in `<prefix>/<pkg>_data`,
+    where `<prefix>` is the `_install` directory that holds the `bin`
+    directory of the running executable. A library's data directory lives in
+    the library's own `_install` directory, so it is linked into the binary's.
+
+    Args:
+      hs: Haskell context.
+      ctx: Rule context.
+      cabal: The Cabal file of the binary.
+      data_dir: The data directory of the binary itself.
+
+    Returns:
+      list of File: The linked data directories.
+    """
+    if hs.toolchain.is_windows:
+        # Cabal builds are not relocatable on Windows, Paths_ modules use
+        # absolute paths there.
+        return []
+
+    links = []
+
+    # The binary's own data directory takes its name.
+    names = {data_dir.basename: True}
+    for dep in ctx.attr.deps:
+        for f in dep[DefaultInfo].default_runfiles.files.to_list():
+            if not f.is_directory or not f.basename.endswith("_data") or paths.basename(f.dirname) != "_install":
+                continue
+
+            # A library in the same package already shares this `_install`
+            # directory.
+            if f.dirname == data_dir.dirname or f.basename in names:
+                continue
+            names[f.basename] = True
+            link = hs.actions.declare_directory("_install/" + f.basename, sibling = cabal)
+            ctx.actions.symlink(output = link, target_file = f)
+            links.append(link)
+    return links
+
 def _haskell_cabal_binary_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
@@ -899,6 +941,7 @@ def _haskell_cabal_binary_impl(ctx):
         "_install/{}_data".format(hs.label.name),
         sibling = cabal,
     )
+    dep_data_dirs = _link_dep_data_dirs(hs, ctx, cabal, data_dir)
     attr_tools = [tool[DefaultInfo].files_to_run for tool in ctx.attr.tools]
     c = _prepare_cabal_inputs(
         hs,
@@ -967,7 +1010,7 @@ def _haskell_cabal_binary_impl(ctx):
         files = depset([binary]),
         executable = binary,
         runfiles = ctx.runfiles(
-            files = [data_dir],
+            files = [data_dir] + dep_data_dirs,
             transitive_files = c.runfiles,
             collect_default = True,
         ),
