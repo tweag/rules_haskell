@@ -1,0 +1,79 @@
+# Check that a `haskell_cabal_binary` can access data files of a `haskell_cabal_library` from another
+# package, via the relocatable `Paths_*` module that Cabal generates for the library.
+#
+# See https://github.com/tweag/rules_haskell/issues/2274
+
+load("@os_info//:os_info.bzl", "is_windows")
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+    "haskell_cabal_library",
+)
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_toolchain_library",
+)
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//tests:analysis_tests.bzl", "analysis_failure_test")
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "reloc-lib",
+    srcs = [
+        "lib/Lib.hs",
+        "lib/datafile",
+        "lib/reloc-lib.cabal",
+    ],
+    tags = ["skip_profiling"],
+    version = "0.1.0.0",
+    deps = [":base"],
+)
+
+haskell_cabal_binary(
+    name = "reloc-bin",
+    srcs = [
+        "bin/Main.hs",
+        "bin/reloc-bin.cabal",
+    ],
+    tags = ["skip_profiling"],
+    deps = [
+        ":base",
+        ":reloc-lib",
+    ],
+)
+
+sh_test(
+    name = "reloc_bin_test{}".format(".exe" if is_windows else ""),
+    srcs = [":reloc-bin"],
+    tags = ["skip_profiling"],
+)
+
+# The data directory of a binary is named after the target.  Named as the `<package>-<version>` of
+# a dependency, it would be at the same path as the symlink to the dependency's data directory.
+haskell_cabal_binary(
+    name = "reloc-lib-0.1.0.0",
+    srcs = [
+        "bin/Main.hs",
+        "bin/reloc-bin.cabal",
+    ],
+    exe_name = "reloc-bin",
+    tags = [
+        "manual",
+        "skip_profiling",
+    ],
+    deps = [
+        ":base",
+        ":reloc-lib",
+    ],
+)
+
+analysis_failure_test(
+    name = "data_dir_name_clash_test",
+    expected_error = "has the same name as the one of its dependency",
+    # Data directories are not linked on Windows, so there is no clash.
+    tags = ["dont_test_on_windows"],
+    target_under_test = ":reloc-lib-0.1.0.0",
+)
