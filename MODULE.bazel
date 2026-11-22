@@ -164,9 +164,13 @@ bazel_dep(
     version = "0.13.0",
     dev_dependency = True,
 )
+# Starting with 0.7.2, stardoc requires `bzl_library` targets for every loaded
+# `.bzl` file.  `rules_java` before 8.3 does not provide one for
+# `@rules_java//java/private:proto_support.bzl`, failing `//docs/...`.
+# WORKSPACE mode is not affected, as it uses an older `rules_java`.
 bazel_dep(
     name = "stardoc",
-    version = "0.6.2",
+    version = "0.7.1",
     dev_dependency = True,
     repo_name = "io_bazel_stardoc",
 )
