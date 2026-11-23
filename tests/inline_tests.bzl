@@ -87,5 +87,6 @@ def py_inline_test(name, script, **kwargs):
         srcs = [script_name] + srcs,
         main = script_name,
         deps = ["@rules_python//python/runfiles"] + deps,
+        legacy_create_init = 0,
         **kwargs
     )

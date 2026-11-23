@@ -67,6 +67,7 @@ def runghc(name, **kwargs):
         name = name,
         srcs = [name + ".py"],
         data = [name + ".py"],
+        legacy_create_init = 0,
         srcs_version = "PY3",
         python_version = "PY3",
         deps = [

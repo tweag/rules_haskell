@@ -3,6 +3,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 py_test(
     name = "package_configuration_test",
     srcs = ["package_configuration_test.py"],
+    legacy_create_init = 0,
     deps = ["@rules_haskell//haskell:package_configuration"],
 )
 

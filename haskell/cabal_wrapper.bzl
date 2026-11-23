@@ -10,5 +10,6 @@ def cabal_wrapper(name, **kwargs):
         srcs_version = "PY3",
         python_version = "PY3",
         imports = ["private"],
+        legacy_create_init = 0,
         **kwargs
     )
