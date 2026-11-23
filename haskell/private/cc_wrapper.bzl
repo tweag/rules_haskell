@@ -115,6 +115,7 @@ def cc_wrapper(name, **kwargs):
     py_binary(
         name = name + "-python",
         srcs = [name + ".py"],
+        legacy_create_init = 0,
         python_version = "PY3",
         main = name + ".py",
         deps = [
