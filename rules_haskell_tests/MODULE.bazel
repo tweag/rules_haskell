@@ -104,7 +104,7 @@ bazel_dep(
 )
 
 bazel_dep(name = "cgrindel_bazel_starlib", version = "0.30.0")
-bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "rules_shell", version = "0.10.0")
 
 ghc_version = use_extension("@rules_haskell//extensions:ghc_version.bzl", "ghc_default_version")
 use_repo(
