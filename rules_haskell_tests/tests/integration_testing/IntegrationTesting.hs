@@ -70,18 +70,44 @@ createDirIfNotExist path = do
 generateBazelRc :: FilePath -> IO ()
 generateBazelRc dir = do
     alreadyExist <- doesFileExist (dir </> ".bazelrc")
-    unless alreadyExist $ Data.Text.IO.writeFile (dir </> ".bazelrc") (pack " \n\
-\ build:linux-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host \n\
-\ build:linux-nixpkgs --incompatible_enable_cc_toolchain_resolution \n\
-\ build:macos-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host \n\
-\ build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution \n\
-\ build:linux-bindist --incompatible_enable_cc_toolchain_resolution \n\
-\ build:macos-bindist --incompatible_enable_cc_toolchain_resolution \n\
-\ build:windows-bindist --incompatible_enable_cc_toolchain_resolution \n\
-\ common --enable_platform_specific_config --experimental_cc_shared_library \n\
-\ common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1 \n\
-\ common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \n\
-\ ")
+    unless alreadyExist $ do
+      ci <- isCI
+      apiKey <- lookupEnv "BUILDBUDDY_API_KEY"
+      let contents = unlines $
+            [ ""
+            , "build:linux-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
+            , "build:linux-nixpkgs --incompatible_enable_cc_toolchain_resolution"
+            , "build:macos-nixpkgs --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host"
+            , "build:macos-nixpkgs --incompatible_enable_cc_toolchain_resolution"
+            , "build:linux-bindist --incompatible_enable_cc_toolchain_resolution"
+            , "build:macos-bindist --incompatible_enable_cc_toolchain_resolution"
+            , "build:windows-bindist --incompatible_enable_cc_toolchain_resolution"
+            , "common --enable_platform_specific_config --experimental_cc_shared_library"
+            , "common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1"
+            , "common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1"
+            ] ++ ciRcLines ci apiKey
+      Data.Text.IO.writeFile (dir </> ".bazelrc") (pack contents)
+
+isCI :: IO Bool
+isCI = (== Just "true") <$> lookupEnv "CI"
+
+-- | Remote cache settings for Bazel invocations made from an integration test
+-- workspace. BES is deliberately not configured here; only the cache is shared.
+ciRcLines :: Bool -> Maybe String -> [String]
+ciRcLines False _ = []
+ciRcLines True apiKey =
+    [ "common --http_connector_attempts=16"
+    , "build --remote_cache=grpcs://remote.buildbuddy.io"
+    , "build --remote_timeout=3600"
+    , "build --experimental_remote_cache_compression"
+    ] ++ case apiKey of
+      Just key | not (null key) ->
+        [ "build --remote_header=x-buildbuddy-api-key=" ++ key
+        , "build --remote_upload_local_results"
+        ]
+      _ ->
+        [ "build --noremote_upload_local_results"
+        ]
 
 setupWorkspace :: IO (String, String)
 setupWorkspace = do
