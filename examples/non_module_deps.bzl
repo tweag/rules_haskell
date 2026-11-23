@@ -47,9 +47,9 @@ cc_library(
     }),
 )
 """,
-        sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
-        strip_prefix = "zlib-1.3.2",
-        urls = ["https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz"],
+        sha256 = "02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584",
+        strip_prefix = "zlib-1.4",
+        urls = ["https://github.com/madler/zlib/releases/download/v1.4/zlib-1.4.tar.gz"],
     )
 
     # Demonstrates a vendored Stackage package to bump a version bound.
