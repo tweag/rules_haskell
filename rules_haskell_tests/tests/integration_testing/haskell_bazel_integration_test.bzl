@@ -50,5 +50,6 @@ def haskell_bazel_integration_test(
             workspace_files = integration_test_utils.glob_workspace_files(workspace_path) + rule_files,
             workspace_path = workspace_path,
             env = dict(env, **{"BIT_BAZEL_BIN_ID": bazel_id}),
+            additional_env_inherit = ["CI", "BUILDBUDDY_API_KEY"],
             **kwargs
         )

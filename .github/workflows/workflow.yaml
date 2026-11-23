@@ -129,9 +129,11 @@ jobs:
           run: bazel test //...
       - name: Build & test - rules_haskell_tests
         if: matrix.module == 'rules_haskell_tests'
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
-          options: ${{ env.NIX_SHELL_ARGS }}
+          options: ${{ env.NIX_SHELL_ARGS }} --keep CI --keep BUILDBUDDY_API_KEY
           working-directory: rules_haskell_tests
           run: |
             # ensure analysis works
@@ -239,6 +241,8 @@ jobs:
         if: matrix.module == 'rules_haskell_tests'
         shell: bash
         working-directory: rules_haskell_tests
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         run: |
           # ensure analysis works
           bazelisk build --nobuild ... | (echo "targets: $( wc -l )")
