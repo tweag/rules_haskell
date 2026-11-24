@@ -73,7 +73,6 @@ haskell_cabal_library(
         urls = ["http://hackage.haskell.org/package/split-0.2.3.3/split-0.2.3.3.tar.gz"],
     )
 
-
 def _non_module_deps_impl(_ctx):
     repositories(bzlmod = True)
 

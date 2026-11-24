@@ -14,9 +14,8 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 bazel_features_deps()
 
