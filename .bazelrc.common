@@ -52,6 +52,10 @@ build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
 
+# prevent auto-detection of system compilers when using nixpkgs
+# (mixing non-nixpkgs and nixpkgs toolchains is usually not a good idea)
+common:nixpkgs --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
 # Build and Test Filters
 # ----------------------
 # Note tag filters do not compose. If you wish to augment these filters on the
