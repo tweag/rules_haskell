@@ -61,7 +61,7 @@ nix_haskell_toolchains.new(
 use_repo(
     nix_haskell_toolchains,
     "nix_haskell_toolchains_configurations",
-    # Once toochains can be registered directly via the rules_nixpkgs_posix module,
+    # Once toolchains can be registered directly via the rules_nixpkgs_posix module,
     # This repository could be removed from the nix_haskell_toolchains extension.
     "all_posix_toolchains",
 )
