@@ -90,6 +90,7 @@ cc_wrapper(
 
 cabal_wrapper(
     name = "cabal_wrapper",
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 
@@ -109,6 +110,7 @@ py_library(
 
 runghc(
     name = "runghc",
+    legacy_create_init = 0,
     visibility = ["//visibility:public"],
 )
 

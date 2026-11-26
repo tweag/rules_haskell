@@ -280,6 +280,10 @@ load(
 # Setup all Bazel dependencies required by rules_haskell.
 rules_haskell_dependencies()
 
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load(
     "@rules_haskell//haskell:toolchain.bzl",
     "rules_haskell_toolchains",
