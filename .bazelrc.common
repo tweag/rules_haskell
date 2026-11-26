@@ -88,7 +88,7 @@ common:ci-common --color=no
 # CI jobs on GitHub Actions sometimes have a hard time fetching tarballs from github repositories
 # (this could take up to a minute until 500 and 502 errors resolve)
 # default retry attempts is 8, this uses exponential back-off, so bumping to 16 should help
-common:ci-common --http_connector_attempts=16
+common:ci --http_connector_attempts=16
 
 common:ci-common --nolegacy_important_outputs
 build:ci-common --loading_phase_threads=1
