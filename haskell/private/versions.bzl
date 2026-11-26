@@ -14,7 +14,7 @@
 # because every bazel version tested requires a lot of space on CI
 # See https://github.com/tweag/rules_haskell/pull/1781#issuecomment-1187640454
 SUPPORTED_BAZEL_VERSIONS = [
-    "7.1.0",
+    "7.6.0",
 ]
 
 SUPPORTED_NIXPKGS_BAZEL_PACKAGES = [

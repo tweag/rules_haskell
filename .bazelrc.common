@@ -35,6 +35,12 @@ common --enable_platform_specific_config
 # do not use Xcode on macOS
 common:macos --repo_env=BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
 
+# abseil-cpp uses clock_gettime unguarded, which requires macOS >= 10.12
+# and std::visit on std::variant which requires >= 10.13
+# Both these versions are now unsupported.
+common:macos --macos_minimum_os=10.13
+common:macos --host_macos_minimum_os=10.13
+
 # Windows Configuration
 # ---------------------
 # prevent auto-detection of system compilers on Windows
@@ -45,6 +51,10 @@ common:windows --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build:linux-nixpkgs --config=nixpkgs
 build:macos-nixpkgs --config=nixpkgs
 build:nixpkgs --host_platform=@rules_nixpkgs_core//platforms:host
+
+# prevent auto-detection of system compilers when using nixpkgs
+# (mixing non-nixpkgs and nixpkgs toolchains is usually not a good idea)
+common:nixpkgs --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 # Build and Test Filters
 # ----------------------
@@ -164,3 +174,8 @@ build:windows-bindist --proto_compiler @rules_haskell//tests:protoc.cmd
 # This flag will become the default in bazel 7
 # https://github.com/bazelbuild/bazel/issues/17032
 build --incompatible_disable_starlark_host_transitions
+
+# Needed for buildifier on the host
+build --cxxopt='-std=c++17'
+build --host_cxxopt='-std=c++17'
+
