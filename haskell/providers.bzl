@@ -44,6 +44,17 @@ HaskellCabalArgsInfo = provider(
     },
 )
 
+HaskellCabalDataInfo = provider(
+    doc = """Data directories of the `haskell_cabal_library` targets in the transitive closure of a
+    target's dependencies.
+
+    `haskell_cabal_binary` uses it to make data files of library dependencies reachable from the
+    `Paths_*` modules Cabal generates for them.  See `_link_library_data_dirs` in `cabal.bzl`.""",
+    fields = {
+        "data_dirs": "Depset of data directories, as installed by Cabal: `_install/<package_id>_data`.",
+    },
+)
+
 def all_package_ids(lib_info):
     return lib_info.exports.to_list()
 

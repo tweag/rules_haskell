@@ -39,6 +39,7 @@ load(
     ":providers.bzl",
     "HaddockInfo",
     "HaskellCabalArgsInfo",
+    "HaskellCabalDataInfo",
     "HaskellInfo",
     "HaskellLibraryInfo",
     "all_dependencies_package_ids",
@@ -455,6 +456,78 @@ haskell_cabal_args = rule(
     provides = [HaskellCabalArgsInfo],
 )
 
+def _gather_library_data_dirs(deps):
+    """Data directories of all `haskell_cabal_library` targets reachable through `deps`."""
+    return depset(transitive = [
+        dep[HaskellCabalDataInfo].data_dirs
+        for dep in deps
+        if HaskellCabalDataInfo in dep
+    ])
+
+def _link_library_data_dirs(hs, cabal, own_data_dir, library_data_dirs):
+    """Makes data files of library dependencies visible to a `haskell_cabal_binary`.
+
+    Packages are configured with `--enable-relocatable` (see `cabal_wrapper.py`).  In this mode,
+    the `Paths_*` module Cabal generates for a library finds the library's data files relative to
+    the running executable: `<executable dir>/../<package_id>_data`.  Every target is installed into
+    the `_install` directory next to its `.cabal` file, so for a library from another directory this
+    path points into the binary's `_install` directory, rather than the library's one.
+
+    This creates `_install/<package_id>_data` symlinks next to the binary, pointing to the data
+    directories of the libraries from other directories.
+
+    See https://github.com/tweag/rules_haskell/issues/2274
+
+    Args:
+      hs: Haskell context.
+      cabal: The `.cabal` file of the binary.  Symlinks are created next to it.
+      own_data_dir: Data directory of the binary itself.
+      library_data_dirs: Depset of library data directories, from `HaskellCabalDataInfo`.
+
+    Returns:
+      List of the created symlinks.
+    """
+
+    # Packages are not relocatable on Windows: data directories are absolute paths.
+    if hs.toolchain.is_windows:
+        return []
+
+    links = []
+    seen = {}
+    for data_dir in library_data_dirs.to_list():
+        # A library whose `.cabal` file is in the same directory as the binary's one, such as a
+        # library and an executable of the same package, is installed into the same `_install`
+        # directory.  Its data directory is already where the `Paths_*` module looks for it.
+        if data_dir.dirname == own_data_dir.dirname:
+            continue
+
+        # The binary's own data directory is named after the target, `<name>_data`.  It only
+        # matches a library one when the target is named exactly as a dependency's
+        # `<package>-<version>`.  The `Paths_*` modules of both packages would then use the same
+        # directory, so the files of one of them would be missing.
+        if data_dir.basename == own_data_dir.basename:
+            fail(("The data directory of `{binary}` has the same name as the one of its " +
+                  "dependency, `{library}`.  Rename `{binary}`.").format(
+                binary = hs.label,
+                library = data_dir.owner,
+            ))
+
+        # `<package_id>_data` with the same `package_id` means the same package is in the
+        # dependencies twice, which GHC can not tell apart either.  Data files are defined per
+        # package, not per component, so both directories are expected to have the same content,
+        # and either one can be used.
+        if data_dir.basename in seen:
+            continue
+        seen[data_dir.basename] = True
+
+        link = hs.actions.declare_directory(
+            "_install/{}".format(data_dir.basename),
+            sibling = cabal,
+        )
+        hs.actions.symlink(output = link, target_file = data_dir)
+        links.append(link)
+    return links
+
 def _haskell_cabal_library_impl(ctx):
     hs = haskell_context(ctx)
     dep_info = gather_dep_info(ctx.attr.name, ctx.attr.deps)
@@ -709,7 +782,10 @@ def _haskell_cabal_library_impl(ctx):
         hs_info = hs_info,
         lib_info = lib_info,
     ))
-    result = [default_info, hs_info, cc_info, lib_info, output_group_info]
+    data_info = HaskellCabalDataInfo(
+        data_dirs = depset([data_dir], transitive = [_gather_library_data_dirs(ctx.attr.deps)]),
+    )
+    result = [default_info, hs_info, cc_info, lib_info, output_group_info, data_info]
     if with_haddock:
         result.append(doc_info)
     return result
@@ -963,11 +1039,17 @@ def _haskell_cabal_binary_impl(ctx):
         user_compile_flags = [],
         user_repl_flags = [],
     )
+    library_data_links = _link_library_data_dirs(
+        hs,
+        cabal,
+        data_dir,
+        _gather_library_data_dirs(ctx.attr.deps),
+    )
     default_info = DefaultInfo(
         files = depset([binary]),
         executable = binary,
         runfiles = ctx.runfiles(
-            files = [data_dir],
+            files = [data_dir] + library_data_links,
             transitive_files = c.runfiles,
             collect_default = True,
         ),

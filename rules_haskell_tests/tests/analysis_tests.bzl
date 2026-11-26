@@ -33,3 +33,22 @@ dynamic_libraries_in_runfiles_test = analysistest.make(
         ),
     },
 )
+
+def _analysis_failure_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    asserts.expect_failure(env, ctx.attr.expected_error)
+    return analysistest.end(env)
+
+analysis_failure_test = analysistest.make(
+    _analysis_failure_test_impl,
+    doc = """Checks that the analysis of `target_under_test` fails with `expected_error`.
+
+    Tag `target_under_test` as `manual`, so that `bazel build //...` does not try to build it.""",
+    attrs = {
+        "expected_error": attr.string(
+            doc = "A substring of the expected error message.",
+            mandatory = True,
+        ),
+    },
+    expect_failure = True,
+)
