@@ -83,7 +83,8 @@ common:ci --config=ci-common
 build:ci --config=remote-cache
 build:ci --remote_upload_local_results
 
-common:ci-common --color=no
+# On CI, use colors to highlight output on the screen.
+common:ci-common --color=yes
 
 # CI jobs on GitHub Actions sometimes have a hard time fetching tarballs from github repositories
 # (this could take up to a minute until 500 and 502 errors resolve)
