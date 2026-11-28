@@ -1,0 +1,67 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_toolchain_library")
+load("@rules_haskell//tests:inline_tests.bzl", "py_inline_test")
+
+package(default_testonly = 1)
+
+haskell_toolchain_library(name = "base")
+
+haskell_cabal_library(
+    name = "cpp-lib",
+    srcs = [
+        "Lib.hs",
+        "cpp-lib.cabal",
+    ],
+    version = "0.1.0.0",
+    deps = [":base"],
+)
+
+filegroup(
+    name = "cpp-lib-deps",
+    srcs = [":cpp-lib"],
+    output_group = "haskell_transitive_deps",
+)
+
+# GHC records the path of the force-included ghcversion.h in the interface
+# files. Check that it does not name the sandbox.
+py_inline_test(
+    name = "interface-files-no-sandbox-path",
+    args = ["$(rlocationpaths :cpp-lib-deps)"],
+    data = [":cpp-lib-deps"],
+    script = """\
+import os
+import re
+import sys
+
+header_paths = []
+for arg in sys.argv[1:]:
+    root = r.Rlocation(arg)
+    if root is None or not os.path.isdir(root):
+        continue
+    for dirpath, _, filenames in os.walk(root):
+        if "cpp-lib-0.1.0.0_iface" not in dirpath:
+            continue
+        for filename in filenames:
+            with open(os.path.join(dirpath, filename), "rb") as f:
+                for match in re.finditer(b"[ -~]*ghcversion[.]h", f.read()):
+                    header_paths.append((filename, match.group(0)))
+
+bad = [
+    (filename, path)
+    for (filename, path) in header_paths
+    if b"/execroot/" in path or b"/sandbox/" in path
+]
+if bad:
+    for (filename, path) in bad:
+        print("{} records {}".format(filename, path.decode("utf-8", "replace")))
+    sys.exit(1)
+""",
+    tags = ["dont_test_on_windows"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
