@@ -469,6 +469,7 @@ filegroup(
         "//tests/generated-modules:all_files",
         "//tests/ghc:all_files",
         "//tests/ghc-check:all_files",
+        "//tests/ghc_cc_env:all_files",
         "//tests/ghcide:all_files",
         "//tests/hackage:all_files",
         "//tests/haddock:all_files",

@@ -186,6 +186,7 @@ def _haskell_binary_common_impl(ctx, is_test):
     cc = cc_interop_info(
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+        unsupported_features = ["treat_warnings_as_errors"],
     )
     java = java_interop_info(deps)
 
@@ -429,6 +430,7 @@ def haskell_library_impl(ctx):
     cc = cc_interop_info(
         ctx,
         override_cc_toolchain = hs.tools_config.maybe_exec_cc_toolchain,
+        unsupported_features = ["treat_warnings_as_errors"],
     )
     java = java_interop_info(ctx.attr.deps + ctx.attr.narrowed_deps)
 

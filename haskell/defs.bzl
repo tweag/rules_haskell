@@ -93,6 +93,12 @@ _haskell_common_attrs = {
     "_cc_toolchain": attr.label(
         default = Label("@rules_cc//cc:current_cc_toolchain"),
     ),
+    "_xcode_config": attr.label(
+        default = configuration_field(
+            name = "xcode_config_label",
+            fragment = "apple",
+        ),
+    ),
     "_ghc_wrapper": attr.label(
         executable = True,
         cfg = "exec",
@@ -182,7 +188,7 @@ def _mk_binary_rule(**kwargs):
             "@rules_haskell//haskell:toolchain",
             "@rules_sh//sh/posix:toolchain_type",
         ],
-        fragments = ["cpp"],
+        fragments = ["apple", "cpp"],
         **kwargs
     )
 
@@ -216,7 +222,7 @@ _haskell_library = rule(
         "@rules_haskell//haskell:toolchain",
         "@rules_sh//sh/posix:toolchain_type",
     ],
-    fragments = ["cpp"],
+    fragments = ["apple", "cpp"],
 )
 
 def _haskell_worker_wrapper(rule_type, **kwargs):

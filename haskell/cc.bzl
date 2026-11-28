@@ -41,13 +41,14 @@ CcInteropInfo = provider(
     },
 )
 
-def cc_interop_info(ctx, override_cc_toolchain = None):
+def cc_interop_info(ctx, override_cc_toolchain = None, unsupported_features = []):
     """Gather information from any CC dependencies.
 
     *Internal function - do not use.*
 
     Args:
       ctx: Rule context.
+      unsupported_features: Features disabled on top of the rule's.
 
     Returns:
       CcInteropInfo: Information needed for CC interop.
@@ -91,7 +92,7 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
         ctx = real_ctx,
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
-        unsupported_features = ctx.disabled_features,
+        unsupported_features = ctx.disabled_features + unsupported_features,
     )
     compile_variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
@@ -156,6 +157,21 @@ def cc_interop_info(ctx, override_cc_toolchain = None):
 
     if cc_wrapper.as_tool.runfiles_manifest:
         env["CC_WRAPPER_MANIFEST"] = cc_wrapper.as_tool.runfiles_manifest.path
+
+    # An Xcode cc toolchain (apple_support's wrapped_clang) reads DEVELOPER_DIR
+    # and SDKROOT. Bazel fills both in for local darwin spawns only when the
+    # action env names the Xcode and SDK versions, as native cc actions do.
+    xcode_config = getattr(real_ctx.attr, "_xcode_config", None)
+    if hs_toolchain.is_darwin and xcode_config and paths.basename(cc_toolchain.ar_executable) != "llvm-libtool-darwin":
+        xcode_config = xcode_config[apple_common.XcodeVersionConfig]
+        env.update(apple_common.apple_host_system_env(xcode_config))
+        env.update(apple_common.target_apple_env(xcode_config, apple_common.platform.macos))
+
+    # GHC's rts/ghc_ffi.h includes "ffi.h", which the macOS SDK keeps under
+    # usr/include/ffi. -iwithsysroot resolves it against whichever SDK the cc
+    # toolchain passes as its sysroot.
+    if hs_toolchain.is_darwin:
+        compiler_flags = compiler_flags + ["-iwithsysroot/usr/include/ffi"]
 
     cc_libraries_info = deps_HaskellCcLibrariesInfo(
         ctx.attr.deps + getattr(ctx.attr, "plugins", []) + getattr(ctx.attr, "setup_deps", []),
