@@ -1,0 +1,39 @@
+# Check that the outputs of haskell_cabal_library do not embed the absolute
+# path of the execroot: neither the static library, which contains the Paths_
+# module, nor the package database. Cabal has no relocatable builds on
+# Windows, see https://github.com/tweag/rules_haskell/issues/2516.
+
+load("@os_info//:os_info.bzl", "is_windows")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":cabal_outputs.bzl", "cabal_outputs")
+
+package(default_testonly = 1)
+
+cabal_outputs(
+    name = "outputs",
+    libraries = [
+        "//tests/haskell_cabal_no_execroot/cabal_paths_module:lib",
+        "//tests/haskell_cabal_no_execroot/generated_paths_module:lib",
+    ],
+    tags = ["skip_profiling"],
+)
+
+sh_test(
+    name = "no_execroot{}".format(".exe" if is_windows else ""),
+    size = "small",
+    srcs = ["no_execroot.sh"],
+    args = ["$(rootpaths :outputs)"],
+    data = [":outputs"],
+    tags = ["skip_profiling"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]) + [
+        "//tests/haskell_cabal_no_execroot/cabal_paths_module:all_files",
+        "//tests/haskell_cabal_no_execroot/generated_paths_module:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
