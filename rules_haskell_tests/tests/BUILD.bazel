@@ -479,6 +479,7 @@ filegroup(
         "//tests/haskell_cabal_library:all_files",
         "//tests/haskell_cabal_library_depends_on_haskell_library:all_files",
         "//tests/haskell_cabal_library_sublibrary_name:all_files",
+        "//tests/haskell_cabal_no_execroot:all_files",
         "//tests/haskell_cabal_package:all_files",
         "//tests/haskell_doctest:all_files",
         "//tests/haskell_import:all_files",

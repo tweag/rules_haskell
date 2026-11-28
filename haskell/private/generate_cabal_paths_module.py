@@ -9,6 +9,8 @@ https://github.com/haskell/cabal/blob/master/Cabal/src/Distribution/Simple/Build
 https://github.com/haskell/cabal/blob/master/templates/Paths_pkg.template.hs
 
 For windows we need to implement the "absolute" case of the template.
+There `pkgroot` is relative to the execroot, like the install directories
+that cabal_wrapper.py passes to Cabal, so that no absolute path is embedded.
 Otherwise we want the "relocatable" case since we called configure with "--enable-relocatable".
 
 """

@@ -241,6 +241,23 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
     cfg_execroot = rel_execroot if not is_windows else execroot
     cfg_pkgroot = os.path.join(cfg_execroot, rel_pkgroot)
 
+    # Cabal has no `--enable-relocatable` on Windows, so it writes the install
+    # directories verbatim into the `Paths_` module and the package
+    # configuration. On Windows we configure them relative to the execroot
+    # instead, to keep the absolute execroot out of the build outputs, and
+    # `Setup copy --destdir=<execroot>` still installs them into `pkgroot`.
+    # Cabal requires an absolute `--prefix`, so the directories that would
+    # default to a path under it are set explicitly, matching Cabal's Windows
+    # defaults (and the `Paths_` module of generate_cabal_paths_module.py).
+    install_root = os.path.normpath(rel_pkgroot) if is_windows else pkgroot
+    # Elsewhere this is the identity: the install dirs are children of pkgroot.
+    def install_dir(path):
+        return os.path.join(install_root, os.path.basename(path))
+    windows_install_args = [
+        "--libexecdir=" + os.path.join(install_root, "$libname"),
+        "--sysconfdir=" + os.path.join(install_root, "etc"),
+    ] if is_windows else []
+
     if deps_package_db:
         # We merge databases of dependencies together assuming that they each contain only one package
         for db in deps_package_databases:
@@ -270,7 +287,7 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
             dynlibdir = os.path.basename(dynlibdir),
             bindir = os.path.basename(bindir),
             datadir = os.path.basename(datadir),
-            pkgroot = pkgroot,
+            pkgroot = install_root,
             workspace = toolchain_info["workspace"],
         )
         if not os.path.exists(paths_file):
@@ -329,19 +346,20 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
         # in that regard.
         "--builddir=" + (os.path.relpath(distdir) if not is_windows else distdir), \
         "--prefix=" + pkgroot, \
-        "--libdir=" + libdir, \
-        "--dynlibdir=" + dynlibdir, \
+        "--libdir=" + install_dir(libdir), \
+        "--dynlibdir=" + install_dir(dynlibdir), \
         "--libsubdir=", \
-        "--bindir=" + bindir, \
-        "--datadir=" + datadir, \
+        "--bindir=" + install_dir(bindir), \
+        "--datadir=" + install_dir(datadir), \
         # Note, setting --datasubdir is required to work around
         #   https://github.com/haskell/cabal/issues/6235
         "--datasubdir=", \
-        "--haddockdir=" + haddockdir, \
-        "--htmldir=" + htmldir, \
+        "--haddockdir=" + install_dir(haddockdir), \
+        "--htmldir=" + install_dir(htmldir), \
         "--package-db=clear", \
         "--package-db=global", \
         ] + \
+        windows_install_args + \
         extra_args + \
         path_args +\
         [ "--package-db=" + package_database ], # This arg must come last.
@@ -354,7 +372,8 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
     # package files and then manually register the package configuration in the
     # package-db.
     # See https://github.com/haskell/cabal/issues/1317#issuecomment-1025942396
-    run([runghc] + runghc_args + [setup, "copy", "--verbose=0", "--builddir=" + distdir])
+    copy_destdir_args = ["--destdir=" + execroot] if is_windows else []
+    run([runghc] + runghc_args + [setup, "copy", "--verbose=0", "--builddir=" + distdir] + copy_destdir_args)
     if component.startswith("lib"):
         run([runghc] + runghc_args + [setup, "register", "--gen-pkg-config=" + os.path.join(package_database, name + ".conf"), "--verbose=0", "--builddir=" + distdir])
     # Bazel builds are not sandboxed on Windows and can be non-sandboxed on
@@ -393,7 +412,39 @@ def make_relocatable_paths(line):
     # These paths are invalid in the package configuration.
     #
     # Replace each occurrence of either kind of path by one relative to ${pkgroot}.
+    if is_windows:
+        return make_relocatable_windows_paths(line)
     line = re.sub(re.escape(cfg_execroot) + r'\S*', make_relative_to_pkgroot, line)
+    return line
+
+def windows_path_pattern(path):
+    """Regex matching `path` with either kind of separator."""
+    parts = [re.escape(part) for part in re.split(r'[\\/]+', path) if part]
+    return r'[\\/]+'.join(parts)
+
+def make_relocatable_windows_paths(line):
+    def relative_to_pkgroot(start):
+        def replace(matchobj):
+            oldpath = re.sub(r'[\\/]+', '/', matchobj.group(0))
+            return "${pkgroot}/" + os.path.relpath(oldpath, start=start).replace("\\", "/")
+        return replace
+
+    # Absolute paths under the execroot. Cabal and GHC do not always spell the
+    # execroot like `os.getcwd()`: separators and the drive letter case vary.
+    line = re.sub(
+        windows_path_pattern(cfg_execroot) + r'[^\s"]*',
+        relative_to_pkgroot(cfg_pkgroot),
+        line,
+        flags = re.IGNORECASE,
+    )
+    # The install directories, which are configured relative to the execroot.
+    # Only match `rel_pkgroot` as a whole path, not as the tail of another path.
+    line = re.sub(
+        r'(?<![\w\\/.:${}+-])' + windows_path_pattern(rel_pkgroot) + r'(?![\w.+-])[^\s"]*',
+        relative_to_pkgroot(rel_pkgroot),
+        line,
+        flags = re.IGNORECASE,
+    )
     return line
 
 if os.path.isfile(package_conf_file):

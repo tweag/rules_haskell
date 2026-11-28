@@ -1,0 +1,24 @@
+load("@rules_haskell//haskell:cabal.bzl", "haskell_cabal_library")
+
+package(default_testonly = 1)
+
+# Uses the Paths_ module that Cabal generates.
+haskell_cabal_library(
+    name = "lib",
+    package_name = "no-execroot-cabal",
+    srcs = [
+        "Lib.hs",
+        "datafile",
+        "no-execroot-cabal.cabal",
+    ],
+    tags = ["skip_profiling"],
+    version = "0.1.0.0",
+    visibility = ["//tests/haskell_cabal_no_execroot:__pkg__"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

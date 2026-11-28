@@ -1,0 +1,13 @@
+cabal-version: >=1.10
+name: no-execroot-generated
+version: 0.1.0.0
+build-type: Simple
+
+data-files:
+  datafile
+
+library
+  build-depends: base, runfiles
+  default-language: Haskell2010
+  exposed-modules: Lib
+  other-modules: Paths_no_execroot_generated
