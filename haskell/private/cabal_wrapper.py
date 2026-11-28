@@ -143,6 +143,26 @@ def recache_db():
 
 recache_db()
 
+def ghcversion_file():
+    """Returns the rts ghcversion.h relative to the working directory.
+
+    GHC force-includes this header in every CPP run and records its path in
+    the interface files. Inside the execroot the default path is absolute and
+    names the sandbox, so pass it relative to keep interface files
+    reproducible. Returns None if the header is not inside the execroot.
+    """
+    dirs = subprocess.check_output([ghc_pkg, "field", "rts", "include-dirs", "--simple-output", "--global"], universal_newlines=True).split()
+    for d in dirs:
+        header = os.path.abspath(os.path.join(d, "ghcversion.h"))
+        if os.path.isfile(header):
+            try:
+                if os.path.commonpath([header, execroot]) == execroot:
+                    return os.path.relpath(header)
+            except ValueError:
+                pass
+            return None
+    return None
+
 @contextmanager
 def mkdtemp(prefix):
     """Create a temporary directory.
@@ -315,6 +335,7 @@ with mkdtemp(distdir_prefix()) as distdir, init_deps_db() as deps_package_db:
         "--with-strip=" + strip,
         "--enable-deterministic", \
         ] +
+        [ "--ghc-option=-ghcversion-file=" + f for f in [ghcversion_file()] if f ] +
         [ "--ghc-option=" + flag.replace("$CC", cc).replace("$LD", ld) for flag in toolchain_info["ghc_cc_args"] ] +
         [ "--hsc2hs-option=-c" + cc,
           "--hsc2hs-option=-l" + cc,

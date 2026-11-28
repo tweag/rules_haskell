@@ -476,6 +476,7 @@ filegroup(
         "//tests/haddock_protobuf:all_files",
         "//tests/haskell_cabal_binary:all_files",
         "//tests/haskell_cabal_doctest:all_files",
+        "//tests/haskell_cabal_ghcversion_file:all_files",
         "//tests/haskell_cabal_library:all_files",
         "//tests/haskell_cabal_library_depends_on_haskell_library:all_files",
         "//tests/haskell_cabal_library_sublibrary_name:all_files",
