@@ -1,0 +1,57 @@
+# Check that the fully_static_link feature links Cabal executables with
+# -optl-static, but not Cabal libraries.
+#
+# The targets are only analyzed: a fully static link needs a toolchain with
+# static libraries, see `fully_static_link` in haskell_register_ghc_nixpkgs.
+
+load(
+    "@rules_haskell//haskell:cabal.bzl",
+    "haskell_cabal_binary",
+    "haskell_cabal_library",
+)
+load(
+    "//tests:analysis_tests.bzl",
+    "cabal_wrapper_extra_args_test",
+)
+
+package(default_testonly = 1)
+
+haskell_cabal_library(
+    name = "lib",
+    srcs = [
+        "Lib.hs",
+        "lib.cabal",
+    ],
+    features = ["fully_static_link"],
+    tags = ["manual"],
+    version = "0.1.0.0",
+)
+
+haskell_cabal_binary(
+    name = "exe",
+    srcs = [
+        "Main.hs",
+        "lib.cabal",
+    ],
+    features = ["fully_static_link"],
+    tags = ["manual"],
+)
+
+cabal_wrapper_extra_args_test(
+    name = "library_not_static",
+    not_contains = ["--ghc-option=-optl-static"],
+    target_under_test = ":lib",
+)
+
+cabal_wrapper_extra_args_test(
+    name = "binary_static",
+    contains = ["--ghc-option=-optl-static"],
+    target_under_test = ":exe",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

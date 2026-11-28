@@ -183,7 +183,7 @@ def _prepare_cabal_inputs(
         verbose,
         transitive_haddocks,
         generate_paths_module,
-        is_library = False,  # @unused
+        is_library = False,
         dynamic_file = None,
         static_binary = True,
         label = None):
@@ -323,7 +323,9 @@ def _prepare_cabal_inputs(
     if hs.toolchain.fully_static_link:
         extra_args.append("--hsc2hs-option=--lflag=-static")
 
-    if hs.features.fully_static_link:
+    # Only executables are linked fully statically, as in haskell_binary.
+    # A library's shared object must not be linked with -static.
+    if hs.features.fully_static_link and not is_library:
         extra_args.append("--ghc-option=-optl-static")
 
     path_args = [
