@@ -28,6 +28,12 @@ used to avoid command line length limitations.
     the MACH-O header size limit on macOS. This wrapper shortens and combines
     rpaths and load commands to avoid exceeding that limit.
 
+- Makes rpaths into the execroot relative on Linux.
+
+    An absolute rpath into the execroot names the sandbox, which differs from
+    one action to the next. This wrapper rewrites it relative to $ORIGIN so
+    that the linked library or binary is reproducible.
+
 - Finds .so files if only .dylib are searched on macOS.
 
     Bazel's cc_library will generate .so files for dynamic libraries even on
@@ -573,7 +579,7 @@ def link(output, libraries, rpaths, args):
         rpaths, darwin_rewrites = darwin_shorten_rpaths(
                 rpaths, libraries, output)
     else:
-        rpaths = shorten_rpaths(rpaths, libraries, output)
+        rpaths = [origin_rpath(rpath, output) for rpath in shorten_rpaths(rpaths, libraries, output)]
 
     args.extend(rpath_args(rpaths))
     # See note in cabal_wrapper.py
@@ -588,6 +594,20 @@ def link(output, libraries, rpaths, args):
 
     if is_darwin():
         darwin_rewrite_load_commands(darwin_rewrites, output)
+
+
+def origin_rpath(rpath, output):
+    """Make an absolute rpath into the execroot relative to $ORIGIN.
+
+    An absolute path into the execroot names the sandbox, which differs from
+    one action to the next, so it would make the output irreproducible.
+    """
+    if not is_linux() or not os.path.isabs(rpath) or is_temporary_output(output):
+        return rpath
+    execroot = os.path.abspath(os.environ.get("RULES_HASKELL_EXEC_ROOT", "."))
+    if os.path.commonpath([rpath, execroot]) != execroot:
+        return rpath
+    return os.path.join("$ORIGIN", os.path.relpath(rpath, os.path.dirname(os.path.abspath(output))))
 
 
 def shorten_rpaths(rpaths, libraries, output):

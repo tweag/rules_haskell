@@ -1,0 +1,20 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+package(default_testonly = 1)
+
+py_test(
+    name = "origin_rpath_test",
+    srcs = ["origin_rpath_test.py"],
+    args = ["$(rlocationpath @rules_haskell//haskell:private/cc_wrapper.py.tpl)"],
+    data = ["@rules_haskell//haskell:private/cc_wrapper.py.tpl"],
+    main = "origin_rpath_test.py",
+    tags = ["dont_test_on_windows"],
+    deps = ["@rules_python//python/runfiles"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
