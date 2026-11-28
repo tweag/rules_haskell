@@ -33,3 +33,63 @@ dynamic_libraries_in_runfiles_test = analysistest.make(
         ),
     },
 )
+
+def _action_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    target_under_test = analysistest.target_under_test(env)
+    actions = [
+        action
+        for action in analysistest.target_actions(env)
+        if action.mnemonic == ctx.attr.mnemonic
+    ]
+    asserts.true(env, len(actions) > 0, "Expected a {} action for {}.".format(ctx.attr.mnemonic, target_under_test.label))
+    for action in actions:
+        for key in ctx.attr.env_contains:
+            asserts.true(
+                env,
+                key in action.env,
+                "Expected {} in the environment of the {} action, got {}.".format(key, ctx.attr.mnemonic, action.env),
+            )
+        for key in ctx.attr.env_not_contains:
+            asserts.false(
+                env,
+                key in action.env,
+                "Expected no {} in the environment of the {} action, got {}.".format(key, ctx.attr.mnemonic, action.env),
+            )
+        for arg in ctx.attr.argv_contains:
+            asserts.true(
+                env,
+                arg in action.argv,
+                "Expected {} in the arguments of the {} action, got {}.".format(arg, ctx.attr.mnemonic, action.argv),
+            )
+        for arg in ctx.attr.argv_not_contains:
+            asserts.false(
+                env,
+                arg in action.argv,
+                "Expected no {} in the arguments of the {} action, got {}.".format(arg, ctx.attr.mnemonic, action.argv),
+            )
+
+    return analysistest.end(env)
+
+action_test = analysistest.make(
+    _action_test_impl,
+    attrs = {
+        "argv_contains": attr.string_list(
+            doc = "Arguments that the action must have.",
+        ),
+        "argv_not_contains": attr.string_list(
+            doc = "Arguments that the action must not have.",
+        ),
+        "env_contains": attr.string_list(
+            doc = "Environment variables that the action must set.",
+        ),
+        "env_not_contains": attr.string_list(
+            doc = "Environment variables that the action must not set.",
+        ),
+        "mnemonic": attr.string(
+            doc = "Mnemonic of the actions to check.",
+            mandatory = True,
+        ),
+    },
+)

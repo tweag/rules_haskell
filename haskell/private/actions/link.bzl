@@ -351,8 +351,11 @@ def link_library_static(hs, cc, _posix, _dep_info, object_files, my_pkg_id, with
             command = "{ar} $@".format(ar = cc.tools.ar),
             arguments = [args],
 
-            # Use the default macosx toolchain
-            env = {"SDKROOT": "macosx"},
+            # With an Xcode cc toolchain, cc.env carries the Xcode version
+            # keys and Bazel sets DEVELOPER_DIR and SDKROOT from them, which
+            # Xcode's libtool needs. A preset SDKROOT would clash with that, so
+            # the default macosx SDK is only named for other toolchains.
+            env = cc.env if "XCODE_VERSION_OVERRIDE" in cc.env else {"SDKROOT": "macosx"},
         )
     else:
         hs.actions.run(

@@ -1,0 +1,54 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_library")
+load(
+    "//tests:analysis_tests.bzl",
+    "action_test",
+)
+
+package(default_testonly = 1)
+
+haskell_library(
+    name = "lib",
+    srcs = ["Lib.hs"],
+    features = ["treat_warnings_as_errors"],
+    tags = ["manual"],
+    deps = ["//tests/hackage:base"],
+)
+
+# GHC passes the C compiler flags to every phase, the assembler included,
+# where clang reports flags like -Werror as unused.
+action_test(
+    name = "compile_warnings_are_not_errors",
+    argv_not_contains = [
+        "-opta-Werror",
+        "-optc-Werror",
+    ],
+    mnemonic = "HaskellBuildLibrary",
+    target_under_test = ":lib",
+)
+
+# Xcode toolchains need DEVELOPER_DIR and SDKROOT, which Bazel only sets when
+# the action environment names the Xcode version.
+action_test(
+    name = "compile_has_xcode_env",
+    argv_contains = ["-optc-iwithsysroot/usr/include/ffi"],
+    env_contains = ["XCODE_VERSION_OVERRIDE"],
+    mnemonic = "HaskellBuildLibrary",
+    target_compatible_with = ["@platforms//os:macos"],
+    target_under_test = ":lib",
+)
+
+action_test(
+    name = "static_library_has_xcode_env",
+    env_contains = ["XCODE_VERSION_OVERRIDE"],
+    env_not_contains = ["SDKROOT"],
+    mnemonic = "HaskellLinkStaticLibrary",
+    target_compatible_with = ["@platforms//os:macos"],
+    target_under_test = ":lib",
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
