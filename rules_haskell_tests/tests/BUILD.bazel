@@ -461,6 +461,7 @@ filegroup(
         "//tests/c2hs:all_files",
         "//tests/cabal-toolchain-flags:all_files",
         "//tests/cc_haskell_import:all_files",
+        "//tests/cc_wrapper_find_cc:all_files",
         "//tests/cpp_macro_conflict:all_files",
         "//tests/data:all_files",
         "//tests/encoding:all_files",
