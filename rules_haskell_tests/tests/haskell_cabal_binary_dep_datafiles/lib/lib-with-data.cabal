@@ -1,0 +1,13 @@
+cabal-version: >=1.10
+name: lib-with-data
+version: 0.1.0.0
+build-type: Simple
+
+data-files:
+  datafile
+
+library
+  build-depends: base
+  default-language: Haskell2010
+  exposed-modules: LibWithData
+  other-modules: Paths_lib_with_data
