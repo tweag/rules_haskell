@@ -1026,6 +1026,8 @@ def find_cc():
     """Find the path to the actual compiler executable."""
     if os.path.isfile(CC):
         cc = CC
+    elif is_windows() and os.path.isfile(CC + ".exe"):
+        cc = CC + ".exe"
     else:
         # On macOS CC is a relative path to a wrapper script. If we're
         # being called from a GHCi REPL then we need to find this wrapper
